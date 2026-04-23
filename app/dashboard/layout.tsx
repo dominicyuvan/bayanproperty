@@ -16,17 +16,17 @@ export default function DashboardLayout({
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { user, loading } = useAuth()
+  const { user, firebaseUser, loading, initialized } = useAuth()
   const { direction } = useLocale()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
+    if (initialized && !loading && !firebaseUser) {
+      router.replace('/login')
     }
-  }, [user, loading, router])
+  }, [firebaseUser, loading, initialized, router])
 
-  if (loading) {
+  if (!initialized || loading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Spinner className="size-8" />
@@ -34,8 +34,12 @@ export default function DashboardLayout({
     )
   }
 
-  if (!user) {
-    return null
+  if (!firebaseUser || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Spinner className="size-8" />
+      </div>
+    )
   }
 
   return (

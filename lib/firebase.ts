@@ -3,13 +3,26 @@ import { getAuth, Auth } from 'firebase/auth'
 import { getFirestore, Firestore } from 'firebase/firestore'
 import { getStorage, FirebaseStorage } from 'firebase/storage'
 
+const defaultFirebaseConfig = {
+  apiKey: 'AIzaSyCK71VqvNVXozzAyJ7k1_dAI9xL9zQ7fSg',
+  authDomain: 'bayan-property.firebaseapp.com',
+  projectId: 'bayan-property',
+  storageBucket: 'bayan-property.firebasestorage.app',
+  messagingSenderId: '44301137046',
+  appId: '1:44301137046:web:82943825ed424fe8cb3eb7',
+}
+
+const normalize = (value: string | undefined) => value?.trim() || undefined
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: normalize(process.env.NEXT_PUBLIC_FIREBASE_API_KEY) || defaultFirebaseConfig.apiKey,
+  authDomain: normalize(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) || defaultFirebaseConfig.authDomain,
+  projectId: normalize(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) || defaultFirebaseConfig.projectId,
+  storageBucket:
+    normalize(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET) || defaultFirebaseConfig.storageBucket,
+  messagingSenderId:
+    normalize(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID) || defaultFirebaseConfig.messagingSenderId,
+  appId: normalize(process.env.NEXT_PUBLIC_FIREBASE_APP_ID) || defaultFirebaseConfig.appId,
 }
 
 // Check if Firebase is configured

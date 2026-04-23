@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Building2, Eye, EyeOff, Globe, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+import { FirebaseError } from 'firebase/app'
 import { useAuth } from '@/contexts/auth-context'
 import { useLocale } from '@/contexts/locale-context'
 import { localeNames } from '@/i18n/config'
@@ -37,7 +38,7 @@ export default function LoginPage() {
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
   const router = useRouter()
-  const { signIn, isConfigured } = useAuth()
+  const { signIn, isConfigured, user, initialized, loading } = useAuth()
   const { locale, setLocale } = useLocale()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -50,6 +51,12 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   })
 
+  useEffect(() => {
+    if (initialized && !loading && user) {
+      router.replace('/dashboard')
+    }
+  }, [initialized, loading, user, router])
+
   const onSubmit = async (data: LoginFormData) => {
     if (!isConfigured) {
       toast.error('Firebase is not configured. Please add your Firebase credentials.')
@@ -60,9 +67,22 @@ export default function LoginPage() {
     try {
       await signIn(data.email, data.password)
       toast.success(locale === 'ar' ? 'تم تسجيل الدخول بنجاح' : 'Signed in successfully')
-      router.push('/dashboard')
+      router.replace('/dashboard')
     } catch (error) {
-      toast.error(tErrors('somethingWentWrong'))
+      if (error instanceof FirebaseError) {
+        const messageByCode: Record<string, string> = {
+          'auth/invalid-credential': 'Invalid email or password.',
+          'auth/user-not-found': 'No account found for this email.',
+          'auth/wrong-password': 'Invalid email or password.',
+          'auth/too-many-requests': 'Too many attempts. Please try again later.',
+          'auth/network-request-failed': 'Network error. Check your connection and try again.',
+          'auth/operation-not-allowed': 'Email/password sign-in is not enabled in Firebase Auth.',
+        }
+
+        toast.error(messageByCode[error.code] || error.message || tErrors('somethingWentWrong'))
+      } else {
+        toast.error(tErrors('somethingWentWrong'))
+      }
     } finally {
       setIsLoading(false)
     }

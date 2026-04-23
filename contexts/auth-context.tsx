@@ -17,6 +17,7 @@ interface AuthContextType {
   user: User | null
   firebaseUser: FirebaseUser | null
   loading: boolean
+  initialized: boolean
   isConfigured: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, userData: Partial<User>) => Promise<void>
@@ -30,40 +31,86 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
     // If Firebase is not configured or auth is null, stop loading
     if (!isFirebaseConfigured) {
       setLoading(false)
+      setInitialized(true)
       return () => {}
     }
 
     if (!auth) {
       setLoading(false)
+      setInitialized(true)
       return () => {}
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser)
+      // Auth state is known at this point; avoid blocking the UI on Firestore calls.
+      setLoading(false)
+      setInitialized(true)
       
       if (fbUser && db) {
+        // Set a provisional profile immediately to avoid redirect races.
+        setUser({
+          id: fbUser.uid,
+          email: fbUser.email || '',
+          phone: '',
+          nameEn: fbUser.displayName || '',
+          nameAr: '',
+          role: 'tenant',
+          languagePreference: 'en',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+
         // Fetch user data from Firestore
         try {
           const userDoc = await getDoc(doc(db, 'users', fbUser.uid))
           if (userDoc.exists()) {
             setUser({ id: fbUser.uid, ...userDoc.data() } as User)
+          } else {
+            // Backfill a profile for users that exist in Auth but not in Firestore.
+            const fallbackUser: Omit<User, 'id'> = {
+              email: fbUser.email || '',
+              phone: '',
+              nameEn: fbUser.displayName || '',
+              nameAr: '',
+              role: 'tenant',
+              languagePreference: 'en',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }
+
+            await setDoc(doc(db, 'users', fbUser.uid), fallbackUser)
+            setUser({ id: fbUser.uid, ...fallbackUser })
           }
         } catch (error) {
           console.error('Error fetching user data:', error)
+          // Keep a minimal authenticated user shape so protected routes can render.
+          setUser({
+            id: fbUser.uid,
+            email: fbUser.email || '',
+            phone: '',
+            nameEn: fbUser.displayName || '',
+            nameAr: '',
+            role: 'tenant',
+            languagePreference: 'en',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
         }
       } else {
         setUser(null)
       }
-      
-      setLoading(false)
     })
 
-    return () => unsubscribe()
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
@@ -108,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         firebaseUser,
         loading,
+        initialized,
         isConfigured: isFirebaseConfigured,
         signIn,
         signUp,
