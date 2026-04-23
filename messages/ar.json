@@ -1,0 +1,267 @@
+{
+  "common": {
+    "appName": "مدير العقارات عُمان",
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "add": "إضافة",
+    "search": "بحث",
+    "filter": "تصفية",
+    "export": "تصدير",
+    "back": "رجوع",
+    "next": "التالي",
+    "submit": "إرسال",
+    "confirm": "تأكيد",
+    "close": "إغلاق",
+    "view": "عرض",
+    "actions": "الإجراءات",
+    "status": "الحالة",
+    "date": "التاريخ",
+    "amount": "المبلغ",
+    "description": "الوصف",
+    "notes": "ملاحظات",
+    "phone": "الهاتف",
+    "email": "البريد الإلكتروني",
+    "address": "العنوان",
+    "name": "الاسم",
+    "type": "النوع",
+    "all": "الكل",
+    "none": "لا شيء",
+    "yes": "نعم",
+    "no": "لا",
+    "currency": "ر.ع."
+  },
+  "auth": {
+    "signIn": "تسجيل الدخول",
+    "signOut": "تسجيل الخروج",
+    "signUp": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "noAccount": "ليس لديك حساب؟",
+    "hasAccount": "لديك حساب بالفعل؟",
+    "welcomeBack": "مرحباً بعودتك",
+    "createAccount": "إنشاء حساب",
+    "signInDescription": "قم بتسجيل الدخول لإدارة عقاراتك",
+    "signUpDescription": "أنشئ حساباً للبدء"
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "properties": "العقارات",
+    "units": "الوحدات",
+    "tenants": "المستأجرون",
+    "owners": "الملاك",
+    "associations": "جمعيات الملاك",
+    "payments": "المدفوعات",
+    "maintenance": "الصيانة",
+    "announcements": "الإعلانات",
+    "notifications": "الإشعارات",
+    "settings": "الإعدادات",
+    "profile": "الملف الشخصي",
+    "help": "المساعدة",
+    "signOut": "تسجيل الخروج"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "welcome": "مرحباً بعودتك، {name}",
+    "overview": "نظرة عامة",
+    "totalProperties": "إجمالي العقارات",
+    "totalUnits": "إجمالي الوحدات",
+    "occupiedUnits": "الوحدات المؤجرة",
+    "vacantUnits": "الوحدات الشاغرة",
+    "pendingPayments": "المدفوعات المعلقة",
+    "overduePayments": "المدفوعات المتأخرة",
+    "maintenanceRequests": "طلبات الصيانة",
+    "recentActivity": "النشاط الأخير",
+    "quickActions": "إجراءات سريعة"
+  },
+  "properties": {
+    "title": "العقارات",
+    "addProperty": "إضافة عقار",
+    "editProperty": "تعديل العقار",
+    "propertyDetails": "تفاصيل العقار",
+    "propertyName": "اسم العقار",
+    "propertyType": "نوع العقار",
+    "governorate": "المحافظة",
+    "city": "المدينة",
+    "totalUnits": "إجمالي الوحدات",
+    "manager": "مدير العقار",
+    "amenities": "المرافق",
+    "types": {
+      "residential_building": "مبنى سكني",
+      "commercial_building": "مبنى تجاري",
+      "mixed_use": "استخدام متعدد",
+      "villa_compound": "مجمع فلل",
+      "single_villa": "فيلا منفردة"
+    }
+  },
+  "units": {
+    "title": "الوحدات",
+    "addUnit": "إضافة وحدة",
+    "editUnit": "تعديل الوحدة",
+    "unitDetails": "تفاصيل الوحدة",
+    "unitNumber": "رقم الوحدة",
+    "unitType": "نوع الوحدة",
+    "floor": "الطابق",
+    "bedrooms": "غرف النوم",
+    "bathrooms": "الحمامات",
+    "area": "المساحة (م²)",
+    "monthlyRent": "الإيجار الشهري",
+    "tenant": "المستأجر",
+    "owner": "المالك",
+    "leaseStart": "بداية العقد",
+    "leaseEnd": "نهاية العقد",
+    "status": {
+      "vacant": "شاغرة",
+      "occupied": "مؤجرة",
+      "maintenance": "تحت الصيانة",
+      "reserved": "محجوزة"
+    },
+    "types": {
+      "apartment": "شقة",
+      "studio": "استوديو",
+      "penthouse": "بنتهاوس",
+      "office": "مكتب",
+      "shop": "محل",
+      "warehouse": "مستودع",
+      "villa": "فيلا"
+    }
+  },
+  "tenants": {
+    "title": "المستأجرون",
+    "addTenant": "إضافة مستأجر",
+    "editTenant": "تعديل المستأجر",
+    "tenantDetails": "تفاصيل المستأجر",
+    "currentUnit": "الوحدة الحالية",
+    "leaseStatus": "حالة العقد",
+    "paymentHistory": "سجل المدفوعات"
+  },
+  "associations": {
+    "title": "جمعيات الملاك",
+    "addAssociation": "إضافة جمعية",
+    "editAssociation": "تعديل الجمعية",
+    "associationDetails": "تفاصيل الجمعية",
+    "chairperson": "رئيس الجمعية",
+    "members": "الأعضاء",
+    "annualBudget": "الميزانية السنوية",
+    "meetingSchedule": "جدول الاجتماعات",
+    "managedProperties": "العقارات المُدارة"
+  },
+  "payments": {
+    "title": "المدفوعات",
+    "addPayment": "تسجيل دفعة",
+    "paymentDetails": "تفاصيل الدفعة",
+    "dueDate": "تاريخ الاستحقاق",
+    "paidDate": "تاريخ الدفع",
+    "paymentMethod": "طريقة الدفع",
+    "reference": "المرجع",
+    "status": {
+      "pending": "معلقة",
+      "paid": "مدفوعة",
+      "overdue": "متأخرة",
+      "partial": "جزئية"
+    },
+    "types": {
+      "rent": "إيجار",
+      "service_charge": "رسوم الخدمات",
+      "deposit": "تأمين",
+      "utility": "مرافق",
+      "maintenance": "صيانة",
+      "other": "أخرى"
+    }
+  },
+  "maintenance": {
+    "title": "طلبات الصيانة",
+    "addRequest": "طلب جديد",
+    "requestDetails": "تفاصيل الطلب",
+    "assignedTo": "مُسند إلى",
+    "priority": {
+      "low": "منخفضة",
+      "medium": "متوسطة",
+      "high": "عالية",
+      "urgent": "عاجلة"
+    },
+    "status": {
+      "open": "مفتوح",
+      "in_progress": "قيد التنفيذ",
+      "resolved": "منجز",
+      "cancelled": "ملغي"
+    }
+  },
+  "announcements": {
+    "title": "الإعلانات",
+    "addAnnouncement": "إعلان جديد",
+    "editAnnouncement": "تعديل الإعلان",
+    "announcementDetails": "تفاصيل الإعلان",
+    "content": "المحتوى",
+    "targetAudience": "الجمهور المستهدف",
+    "publishDate": "تاريخ النشر",
+    "expiryDate": "تاريخ الانتهاء",
+    "sendNotifications": "إرسال إشعارات",
+    "attachments": "المرفقات",
+    "types": {
+      "general": "عام",
+      "urgent": "عاجل",
+      "maintenance": "صيانة",
+      "payment_reminder": "تذكير بالدفع",
+      "association": "جمعية الملاك"
+    },
+    "targets": {
+      "all": "جميع المستخدمين",
+      "tenants": "المستأجرون فقط",
+      "owners": "الملاك فقط",
+      "association_members": "أعضاء الجمعية"
+    },
+    "priority": {
+      "normal": "عادية",
+      "high": "عالية",
+      "urgent": "عاجلة"
+    }
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "markAsRead": "تحديد كمقروء",
+    "markAllRead": "تحديد الكل كمقروء",
+    "noNotifications": "لا توجد إشعارات",
+    "preferences": "تفضيلات الإشعارات",
+    "emailNotifications": "إشعارات البريد الإلكتروني",
+    "smsNotifications": "إشعارات الرسائل النصية",
+    "categories": "الفئات"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "language": "اللغة",
+    "theme": "المظهر",
+    "profile": "إعدادات الملف الشخصي",
+    "security": "الأمان",
+    "notifications": "الإشعارات"
+  },
+  "governorates": {
+    "Muscat": "مسقط",
+    "Dhofar": "ظفار",
+    "Musandam": "مسندم",
+    "Al Buraimi": "البريمي",
+    "Ad Dakhiliyah": "الداخلية",
+    "Al Batinah North": "شمال الباطنة",
+    "Al Batinah South": "جنوب الباطنة",
+    "Ash Sharqiyah North": "شمال الشرقية",
+    "Ash Sharqiyah South": "جنوب الشرقية",
+    "Ad Dhahirah": "الظاهرة",
+    "Al Wusta": "الوسطى"
+  },
+  "errors": {
+    "required": "هذا الحقل مطلوب",
+    "invalidEmail": "بريد إلكتروني غير صالح",
+    "invalidPhone": "رقم هاتف غير صالح",
+    "minLength": "الحد الأدنى {min} أحرف",
+    "maxLength": "الحد الأقصى {max} أحرف",
+    "passwordMismatch": "كلمتا المرور غير متطابقتين",
+    "somethingWentWrong": "حدث خطأ ما",
+    "notFound": "غير موجود",
+    "unauthorized": "غير مصرح"
+  }
+}

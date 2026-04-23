@@ -1,0 +1,267 @@
+{
+  "common": {
+    "appName": "Oman Property Manager",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "close": "Close",
+    "view": "View",
+    "actions": "Actions",
+    "status": "Status",
+    "date": "Date",
+    "amount": "Amount",
+    "description": "Description",
+    "notes": "Notes",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "name": "Name",
+    "type": "Type",
+    "all": "All",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "currency": "OMR"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "signUp": "Sign Up",
+    "email": "Email Address",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "welcomeBack": "Welcome Back",
+    "createAccount": "Create Account",
+    "signInDescription": "Sign in to manage your properties",
+    "signUpDescription": "Create an account to get started"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "properties": "Properties",
+    "units": "Units",
+    "tenants": "Tenants",
+    "owners": "Owners",
+    "associations": "Associations",
+    "payments": "Payments",
+    "maintenance": "Maintenance",
+    "announcements": "Announcements",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "profile": "Profile",
+    "help": "Help",
+    "signOut": "Sign Out"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {name}",
+    "overview": "Overview",
+    "totalProperties": "Total Properties",
+    "totalUnits": "Total Units",
+    "occupiedUnits": "Occupied Units",
+    "vacantUnits": "Vacant Units",
+    "pendingPayments": "Pending Payments",
+    "overduePayments": "Overdue Payments",
+    "maintenanceRequests": "Maintenance Requests",
+    "recentActivity": "Recent Activity",
+    "quickActions": "Quick Actions"
+  },
+  "properties": {
+    "title": "Properties",
+    "addProperty": "Add Property",
+    "editProperty": "Edit Property",
+    "propertyDetails": "Property Details",
+    "propertyName": "Property Name",
+    "propertyType": "Property Type",
+    "governorate": "Governorate",
+    "city": "City",
+    "totalUnits": "Total Units",
+    "manager": "Property Manager",
+    "amenities": "Amenities",
+    "types": {
+      "residential_building": "Residential Building",
+      "commercial_building": "Commercial Building",
+      "mixed_use": "Mixed Use",
+      "villa_compound": "Villa Compound",
+      "single_villa": "Single Villa"
+    }
+  },
+  "units": {
+    "title": "Units",
+    "addUnit": "Add Unit",
+    "editUnit": "Edit Unit",
+    "unitDetails": "Unit Details",
+    "unitNumber": "Unit Number",
+    "unitType": "Unit Type",
+    "floor": "Floor",
+    "bedrooms": "Bedrooms",
+    "bathrooms": "Bathrooms",
+    "area": "Area (sqm)",
+    "monthlyRent": "Monthly Rent",
+    "tenant": "Tenant",
+    "owner": "Owner",
+    "leaseStart": "Lease Start",
+    "leaseEnd": "Lease End",
+    "status": {
+      "vacant": "Vacant",
+      "occupied": "Occupied",
+      "maintenance": "Under Maintenance",
+      "reserved": "Reserved"
+    },
+    "types": {
+      "apartment": "Apartment",
+      "studio": "Studio",
+      "penthouse": "Penthouse",
+      "office": "Office",
+      "shop": "Shop",
+      "warehouse": "Warehouse",
+      "villa": "Villa"
+    }
+  },
+  "tenants": {
+    "title": "Tenants",
+    "addTenant": "Add Tenant",
+    "editTenant": "Edit Tenant",
+    "tenantDetails": "Tenant Details",
+    "currentUnit": "Current Unit",
+    "leaseStatus": "Lease Status",
+    "paymentHistory": "Payment History"
+  },
+  "associations": {
+    "title": "Owner's Associations",
+    "addAssociation": "Add Association",
+    "editAssociation": "Edit Association",
+    "associationDetails": "Association Details",
+    "chairperson": "Chairperson",
+    "members": "Members",
+    "annualBudget": "Annual Budget",
+    "meetingSchedule": "Meeting Schedule",
+    "managedProperties": "Managed Properties"
+  },
+  "payments": {
+    "title": "Payments",
+    "addPayment": "Record Payment",
+    "paymentDetails": "Payment Details",
+    "dueDate": "Due Date",
+    "paidDate": "Paid Date",
+    "paymentMethod": "Payment Method",
+    "reference": "Reference",
+    "status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "partial": "Partial"
+    },
+    "types": {
+      "rent": "Rent",
+      "service_charge": "Service Charge",
+      "deposit": "Deposit",
+      "utility": "Utility",
+      "maintenance": "Maintenance",
+      "other": "Other"
+    }
+  },
+  "maintenance": {
+    "title": "Maintenance Requests",
+    "addRequest": "New Request",
+    "requestDetails": "Request Details",
+    "assignedTo": "Assigned To",
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "status": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "resolved": "Resolved",
+      "cancelled": "Cancelled"
+    }
+  },
+  "announcements": {
+    "title": "Announcements",
+    "addAnnouncement": "New Announcement",
+    "editAnnouncement": "Edit Announcement",
+    "announcementDetails": "Announcement Details",
+    "content": "Content",
+    "targetAudience": "Target Audience",
+    "publishDate": "Publish Date",
+    "expiryDate": "Expiry Date",
+    "sendNotifications": "Send Notifications",
+    "attachments": "Attachments",
+    "types": {
+      "general": "General",
+      "urgent": "Urgent",
+      "maintenance": "Maintenance",
+      "payment_reminder": "Payment Reminder",
+      "association": "Association"
+    },
+    "targets": {
+      "all": "All Users",
+      "tenants": "Tenants Only",
+      "owners": "Owners Only",
+      "association_members": "Association Members"
+    },
+    "priority": {
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAsRead": "Mark as Read",
+    "markAllRead": "Mark All as Read",
+    "noNotifications": "No notifications",
+    "preferences": "Notification Preferences",
+    "emailNotifications": "Email Notifications",
+    "smsNotifications": "SMS Notifications",
+    "categories": "Categories"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "profile": "Profile Settings",
+    "security": "Security",
+    "notifications": "Notifications"
+  },
+  "governorates": {
+    "Muscat": "Muscat",
+    "Dhofar": "Dhofar",
+    "Musandam": "Musandam",
+    "Al Buraimi": "Al Buraimi",
+    "Ad Dakhiliyah": "Ad Dakhiliyah",
+    "Al Batinah North": "Al Batinah North",
+    "Al Batinah South": "Al Batinah South",
+    "Ash Sharqiyah North": "Ash Sharqiyah North",
+    "Ash Sharqiyah South": "Ash Sharqiyah South",
+    "Ad Dhahirah": "Ad Dhahirah",
+    "Al Wusta": "Al Wusta"
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "invalidPhone": "Invalid phone number",
+    "minLength": "Minimum {min} characters required",
+    "maxLength": "Maximum {max} characters allowed",
+    "passwordMismatch": "Passwords do not match",
+    "somethingWentWrong": "Something went wrong",
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized"
+  }
+}
