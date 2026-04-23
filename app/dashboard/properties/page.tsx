@@ -40,6 +40,7 @@ import {
 import { PropertyForm } from '@/components/properties/property-form'
 import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
 import { subscribeProperties } from '@/lib/properties-db'
+import { MUSCAT_DISTRICT_SET } from '@/lib/muscat-districts'
 import { OMAN_GOVERNORATES, type Property } from '@/lib/types'
 
 export default function PropertiesPage() {
@@ -48,6 +49,10 @@ export default function PropertiesPage() {
   const tGov = useTranslations('governorates')
   const tForms = useTranslations('forms')
   const tErrors = useTranslations('errors')
+  /** Muscat district keys are dynamic; next-intl keys are under `muscatDistricts.*`. */
+  const tProps = t as (key: string) => string
+  const muscatCityLabel = (governorate: string, city: string) =>
+    governorate === 'Muscat' && MUSCAT_DISTRICT_SET.has(city) ? tProps(`muscatDistricts.${city}`) : city
   const { locale } = useLocale()
   const [properties, setProperties] = useState<Property[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -85,11 +90,13 @@ export default function PropertiesPage() {
   const filteredProperties = properties.filter((property) => {
     const name = locale === 'ar' ? property.nameAr : property.nameEn
     const address = locale === 'ar' ? property.addressAr : property.addressEn
+    const cityDisplay = muscatCityLabel(property.governorate, property.city)
     const q = searchQuery.toLowerCase()
     const matchesSearch =
       name.toLowerCase().includes(q) ||
       address.toLowerCase().includes(q) ||
       property.city.toLowerCase().includes(q) ||
+      cityDisplay.toLowerCase().includes(q) ||
       (property.code?.toLowerCase().includes(q) ?? false) ||
       (property.plotNumber?.toLowerCase().includes(q) ?? false)
     const matchesGovernorate = governorateFilter === 'all' || property.governorate === governorateFilter
@@ -191,6 +198,7 @@ export default function PropertiesPage() {
             {filteredProperties.map((property) => {
               const name = locale === 'ar' ? property.nameAr : property.nameEn
               const addressLine = locale === 'ar' ? property.addressAr : property.addressEn
+              const cityLabel = muscatCityLabel(property.governorate, property.city)
               const occupied = property.occupiedUnits ?? 0
               const total = Math.max(1, property.totalUnits)
               const occupancyRate = Math.round((occupied / total) * 100)
@@ -211,7 +219,7 @@ export default function PropertiesPage() {
                         <p className="truncate font-medium leading-tight">{name}</p>
                         <p className="mt-0.5 flex items-start gap-1 truncate text-xs text-muted-foreground">
                           <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
-                          <span className="truncate">{property.city}</span>
+                          <span className="truncate">{cityLabel}</span>
                         </p>
                         <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground xl:hidden">
                           {addressLine}
@@ -231,7 +239,7 @@ export default function PropertiesPage() {
                   </TableCell>
                   <TableCell className="hidden xl:table-cell min-w-0 max-w-[12rem]">
                     <p className="truncate text-sm">{tGov(property.governorate)}</p>
-                    <p className="truncate text-xs text-muted-foreground">{property.city}</p>
+                    <p className="truncate text-xs text-muted-foreground">{cityLabel}</p>
                   </TableCell>
                   <TableCell className="text-end tabular-nums">
                     <span className="text-sm font-medium">{occupied}</span>

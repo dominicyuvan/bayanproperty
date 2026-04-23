@@ -94,7 +94,8 @@ export function subscribeProperties(
 }
 
 export type CreatePropertyInput = {
-  code: string
+  /** Optional business / internal reference */
+  code?: string
   plotNumber?: string
   nameEn: string
   nameAr: string
@@ -114,8 +115,9 @@ export async function createPropertyRecord(input: CreatePropertyInput): Promise<
   const plot = input.plotNumber?.trim()
   const total = Number(input.totalUnits)
   const totalUnits = Math.max(1, Number.isFinite(total) ? Math.floor(total) : 1)
+  const codeTrim = input.code?.trim()
   const ref = await addDoc(collection(db, COLLECTION), {
-    code: input.code.trim(),
+    ...(codeTrim ? { code: codeTrim } : {}),
     ...(plot ? { plotNumber: plot } : {}),
     nameEn: input.nameEn.trim(),
     nameAr: input.nameAr.trim(),

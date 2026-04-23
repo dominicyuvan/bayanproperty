@@ -1,12 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -24,25 +23,23 @@ import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/auth-context'
 import { db, isFirebaseConfigured } from '@/lib/firebase'
 import { createPropertyRecord } from '@/lib/properties-db'
+import { MUSCAT_DISTRICT_KEYS, MUSCAT_DISTRICT_SET } from '@/lib/muscat-districts'
 import { OMAN_GOVERNORATES, PROPERTY_TYPES, type OmanGovernorate } from '@/lib/types'
-import { generatePropertyCode } from '@/lib/property-code'
 import { useEnToArAutofill } from '@/hooks/use-en-to-ar-autofill'
 
-const propertySchema = z.object({
-  code: z.string().min(3, 'Code is required'),
-  plotNumber: z.string().max(80, 'Plot number is too long'),
-  nameEn: z.string().min(2, 'Name must be at least 2 characters'),
-  nameAr: z.string().min(2, 'Name must be at least 2 characters'),
-  type: z.enum(['residential_building', 'commercial_building', 'mixed_use', 'villa_compound', 'single_villa']),
-  governorate: z.string().min(1, 'Please select a governorate'),
-  city: z.string().min(2, 'City must be at least 2 characters'),
-  addressEn: z.string().min(5, 'Address must be at least 5 characters'),
-  addressAr: z.string().min(5, 'Address must be at least 5 characters'),
-  totalUnits: z.number().min(1, 'Must have at least 1 unit'),
-  amenities: z.string().optional(),
-})
-
-type PropertyFormData = z.infer<typeof propertySchema>
+type PropertyFormData = {
+  code: string
+  plotNumber: string
+  nameEn: string
+  nameAr: string
+  type: (typeof PROPERTY_TYPES)[number]
+  governorate: string
+  city: string
+  addressEn: string
+  addressAr: string
+  totalUnits: number
+  amenities?: string
+}
 
 interface PropertyFormProps {
   onSuccess?: () => void
@@ -59,7 +56,48 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [autoAr, setAutoAr] = useState(true)
 
-  const initialGover = initialData?.governorate as OmanGovernorate | undefined
+  const propertySchema = useMemo(
+    () =>
+      z
+        .object({
+          code: z.string().max(80),
+          plotNumber: z.string().max(80),
+          nameEn: z.string().min(2, tErrors('minLength', { min: 2 })),
+          nameAr: z.string().min(2, tErrors('minLength', { min: 2 })),
+          type: z.enum([
+            'residential_building',
+            'commercial_building',
+            'mixed_use',
+            'villa_compound',
+            'single_villa',
+          ]),
+          governorate: z.string().min(1, tErrors('required')),
+          city: z.string().min(1, tErrors('required')),
+          addressEn: z.string().min(5, tErrors('minLength', { min: 5 })),
+          addressAr: z.string().min(5, tErrors('minLength', { min: 5 })),
+          totalUnits: z.coerce.number().min(1, tErrors('required')),
+          amenities: z.string().optional(),
+        })
+        .superRefine((data, ctx) => {
+          if (data.governorate === 'Muscat') {
+            if (!MUSCAT_DISTRICT_SET.has(data.city)) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['city'],
+                message: t('selectMuscatArea'),
+              })
+            }
+          } else if (data.city.trim().length < 2) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['city'],
+              message: tErrors('minLength', { min: 2 }),
+            })
+          }
+        }),
+    [t, tErrors],
+  )
+
   const {
     register,
     handleSubmit,
@@ -69,16 +107,22 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
   } = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
+      code: '',
       plotNumber: '',
+      nameEn: '',
+      nameAr: '',
+      type: 'residential_building',
+      governorate: '',
+      city: '',
+      addressEn: '',
+      addressAr: '',
+      totalUnits: 1,
+      amenities: '',
       ...initialData,
-      type: initialData?.type || 'residential_building',
-      code:
-        initialData?.code ??
-        generatePropertyCode(
-          (initialGover as OmanGovernorate | undefined) ?? null
-        ),
     },
   })
+
+  const governorate = watch('governorate')
 
   const { translating: nameTranslating } = useEnToArAutofill({
     watch,
@@ -115,14 +159,15 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           .map((s) => s.trim())
           .filter(Boolean) ?? []
       const plot = data.plotNumber?.trim()
+      const codeTrim = data.code?.trim()
       await createPropertyRecord({
-        code: data.code,
+        ...(codeTrim ? { code: codeTrim } : {}),
         ...(plot ? { plotNumber: plot } : {}),
         nameEn: data.nameEn,
         nameAr: data.nameAr,
         type: data.type,
         governorate: data.governorate as OmanGovernorate,
-        city: data.city,
+        city: data.city.trim(),
         addressEn: data.addressEn,
         addressAr: data.addressAr,
         totalUnits: data.totalUnits,
@@ -151,36 +196,14 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FieldGroup>
         <Field>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <FieldLabel htmlFor="code">{tForms('propertyCode')}</FieldLabel>
-              <p className="text-xs text-muted-foreground">{tForms('propertyCodeHelp')}</p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={() =>
-                setValue(
-                  'code',
-                  generatePropertyCode(
-                    (watch('governorate') as OmanGovernorate) || null
-                  ),
-                  { shouldValidate: true, shouldDirty: true }
-                )
-              }
-            >
-              <RefreshCw className="me-2 h-3.5 w-3.5" />
-              {tForms('regenerateCode')}
-            </Button>
-          </div>
+          <FieldLabel htmlFor="code">{tForms('propertyCode')}</FieldLabel>
+          <p className="text-xs text-muted-foreground">{tForms('propertyCodeHelp')}</p>
           <Input
             id="code"
-            readOnly
-            className="font-mono"
-            aria-readonly
+            placeholder="e.g. PROP-001"
+            autoComplete="off"
             {...register('code')}
+            className={errors.code ? 'border-destructive' : ''}
           />
           {errors.code && <p className="text-sm text-destructive">{errors.code.message}</p>}
         </Field>
@@ -273,10 +296,13 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           <Field>
             <FieldLabel htmlFor="governorate">{t('governorate')}</FieldLabel>
             <Select
-              value={watch('governorate')}
-              onValueChange={(value) => setValue('governorate', value)}
+              value={watch('governorate') || undefined}
+              onValueChange={(value) => {
+                setValue('governorate', value, { shouldValidate: true })
+                setValue('city', '', { shouldValidate: true })
+              }}
             >
-              <SelectTrigger>
+              <SelectTrigger id="governorate">
                 <SelectValue placeholder={t('governorate')} />
               </SelectTrigger>
               <SelectContent>
@@ -294,12 +320,34 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
 
           <Field>
             <FieldLabel htmlFor="city">{t('city')}</FieldLabel>
-            <Input
-              id="city"
-              placeholder="City"
-              {...register('city')}
-              className={errors.city ? 'border-destructive' : ''}
-            />
+            {!governorate ? (
+              <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+                {t('cityPickGovernorateFirst')}
+              </p>
+            ) : governorate === 'Muscat' ? (
+              <Select
+                value={watch('city') || undefined}
+                onValueChange={(value) => setValue('city', value, { shouldValidate: true })}
+              >
+                <SelectTrigger id="city" className={errors.city ? 'border-destructive' : ''}>
+                  <SelectValue placeholder={t('selectCityArea')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {MUSCAT_DISTRICT_KEYS.map((key) => (
+                    <SelectItem key={key} value={key}>
+                      {t(`muscatDistricts.${key}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="city"
+                placeholder={t('cityPlaceholderOther')}
+                {...register('city')}
+                className={errors.city ? 'border-destructive' : ''}
+              />
+            )}
             {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
           </Field>
         </div>
