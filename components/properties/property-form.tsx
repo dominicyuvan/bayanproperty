@@ -10,8 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -25,18 +23,15 @@ import { db, isFirebaseConfigured } from '@/lib/firebase'
 import { createPropertyRecord } from '@/lib/properties-db'
 import { MUSCAT_DISTRICT_KEYS, MUSCAT_DISTRICT_SET } from '@/lib/muscat-districts'
 import { OMAN_GOVERNORATES, PROPERTY_TYPES, type OmanGovernorate } from '@/lib/types'
-import { useEnToArAutofill } from '@/hooks/use-en-to-ar-autofill'
 
 type PropertyFormData = {
   code: string
   plotNumber: string
   nameEn: string
-  nameAr: string
   type: (typeof PROPERTY_TYPES)[number]
   governorate: string
   city: string
   addressEn: string
-  addressAr: string
   totalUnits: number
   amenities?: string
 }
@@ -54,7 +49,6 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
   const tErrors = useTranslations('errors')
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const [autoAr, setAutoAr] = useState(true)
 
   const propertySchema = useMemo(
     () =>
@@ -63,7 +57,6 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           code: z.string().max(80),
           plotNumber: z.string().max(80),
           nameEn: z.string().min(2, tErrors('minLength', { min: 2 })),
-          nameAr: z.string().min(2, tErrors('minLength', { min: 2 })),
           type: z.enum([
             'residential_building',
             'commercial_building',
@@ -74,7 +67,6 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           governorate: z.string().min(1, tErrors('required')),
           city: z.string().min(1, tErrors('required')),
           addressEn: z.string().min(5, tErrors('minLength', { min: 5 })),
-          addressAr: z.string().min(5, tErrors('minLength', { min: 5 })),
           totalUnits: z.coerce.number().min(1, tErrors('required')),
           amenities: z.string().optional(),
         })
@@ -110,12 +102,10 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
       code: '',
       plotNumber: '',
       nameEn: '',
-      nameAr: '',
       type: 'residential_building',
       governorate: '',
       city: '',
       addressEn: '',
-      addressAr: '',
       totalUnits: 1,
       amenities: '',
       ...initialData,
@@ -123,23 +113,6 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
   })
 
   const governorate = watch('governorate')
-
-  const { translating: nameTranslating } = useEnToArAutofill({
-    watch,
-    setValue,
-    enPath: 'nameEn',
-    arPath: 'nameAr',
-    options: { enabled: autoAr, minSourceChars: 2, debounceMs: 600 },
-  })
-  const { translating: addressTranslating } = useEnToArAutofill({
-    watch,
-    setValue,
-    enPath: 'addressEn',
-    arPath: 'addressAr',
-    options: { enabled: autoAr, minSourceChars: 5, debounceMs: 700 },
-  })
-
-  const translating = nameTranslating || addressTranslating
 
   const onSubmit = async (data: PropertyFormData) => {
     if (!user) {
@@ -152,6 +125,9 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
     }
 
     setIsLoading(true)
+    const SAVE_TIMEOUT_MS = 45_000
+    const name = data.nameEn.trim()
+    const address = data.addressEn.trim()
     try {
       const amenities =
         data.amenities
@@ -160,20 +136,31 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           .filter(Boolean) ?? []
       const plot = data.plotNumber?.trim()
       const codeTrim = data.code?.trim()
-      await createPropertyRecord({
+      const savePromise = createPropertyRecord({
         ...(codeTrim ? { code: codeTrim } : {}),
         ...(plot ? { plotNumber: plot } : {}),
-        nameEn: data.nameEn,
-        nameAr: data.nameAr,
+        nameEn: name,
+        nameAr: name,
         type: data.type,
         governorate: data.governorate as OmanGovernorate,
         city: data.city.trim(),
-        addressEn: data.addressEn,
-        addressAr: data.addressAr,
+        addressEn: address,
+        addressAr: address,
         totalUnits: data.totalUnits,
         amenities,
         managerId: user.id,
       })
+      let saveTimeoutId: ReturnType<typeof setTimeout> | undefined
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        saveTimeoutId = setTimeout(() => {
+          reject(Object.assign(new Error('Save timed out'), { code: 'save-timeout' }))
+        }, SAVE_TIMEOUT_MS)
+      })
+      try {
+        await Promise.race([savePromise, timeoutPromise])
+      } finally {
+        if (saveTimeoutId !== undefined) clearTimeout(saveTimeoutId)
+      }
       toast.success(t('propertySaved'))
       onSuccess?.()
     } catch (error: unknown) {
@@ -184,6 +171,8 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           : ''
       if (code === 'permission-denied') {
         toast.error(tErrors('firestorePermissionDenied'))
+      } else if (code === 'save-timeout') {
+        toast.error(tErrors('saveTimedOut'))
       } else {
         toast.error(tErrors('somethingWentWrong'))
       }
@@ -208,55 +197,19 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           {errors.code && <p className="text-sm text-destructive">{errors.code.message}</p>}
         </Field>
 
-        <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-          <div className="space-y-0.5 pe-2">
-            <Label htmlFor="auto-ar" className="text-sm font-medium">
-              {tForms('autoTranslateAr')}
-            </Label>
-            {translating && (
-              <p className="text-xs text-muted-foreground">
-                {tForms('translating')} <Spinner className="ms-1 inline size-3 align-middle" />
-              </p>
-            )}
-          </div>
-          <Switch id="auto-ar" checked={autoAr} onCheckedChange={setAutoAr} />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="nameEn">{t('propertyName')} (English)</FieldLabel>
-            <Input
-              id="nameEn"
-              placeholder="Property name"
-              autoComplete="off"
-              {...register('nameEn')}
-              className={errors.nameEn ? 'border-destructive' : ''}
-            />
-            {errors.nameEn && (
-              <p className="text-sm text-destructive">{errors.nameEn.message}</p>
-            )}
-          </Field>
-
-          <Field>
-            <div className="flex items-center justify-between gap-2">
-              <FieldLabel htmlFor="nameAr">{t('propertyName')} (عربي)</FieldLabel>
-              {nameTranslating && autoAr && (
-                <span className="text-xs text-muted-foreground">{tForms('translating')}</span>
-              )}
-            </div>
-            <Input
-              id="nameAr"
-              placeholder="اسم العقار"
-              dir="rtl"
-              autoComplete="off"
-              {...register('nameAr')}
-              className={errors.nameAr ? 'border-destructive' : ''}
-            />
-            {errors.nameAr && (
-              <p className="text-sm text-destructive">{errors.nameAr.message}</p>
-            )}
-          </Field>
-        </div>
+        <Field>
+          <FieldLabel htmlFor="nameEn">{t('propertyName')}</FieldLabel>
+          <Input
+            id="nameEn"
+            placeholder="Property name"
+            autoComplete="off"
+            {...register('nameEn')}
+            className={errors.nameEn ? 'border-destructive' : ''}
+          />
+          {errors.nameEn && (
+            <p className="text-sm text-destructive">{errors.nameEn.message}</p>
+          )}
+        </Field>
 
         <Field>
           <FieldLabel htmlFor="plotNumber">{t('plotNumber')}</FieldLabel>
@@ -352,41 +305,19 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="addressEn">{tCommon('address')} (English)</FieldLabel>
-            <Textarea
-              id="addressEn"
-              placeholder="Full address"
-              rows={2}
-              {...register('addressEn')}
-              className={errors.addressEn ? 'border-destructive' : ''}
-            />
-            {errors.addressEn && (
-              <p className="text-sm text-destructive">{errors.addressEn.message}</p>
-            )}
-          </Field>
-
-          <Field>
-            <div className="flex items-center justify-between gap-2">
-              <FieldLabel htmlFor="addressAr">{tCommon('address')} (عربي)</FieldLabel>
-              {addressTranslating && autoAr && (
-                <span className="text-xs text-muted-foreground">{tForms('translating')}</span>
-              )}
-            </div>
-            <Textarea
-              id="addressAr"
-              placeholder="العنوان الكامل"
-              dir="rtl"
-              rows={2}
-              {...register('addressAr')}
-              className={errors.addressAr ? 'border-destructive' : ''}
-            />
-            {errors.addressAr && (
-              <p className="text-sm text-destructive">{errors.addressAr.message}</p>
-            )}
-          </Field>
-        </div>
+        <Field>
+          <FieldLabel htmlFor="addressEn">{tCommon('address')}</FieldLabel>
+          <Textarea
+            id="addressEn"
+            placeholder="Full address"
+            rows={3}
+            {...register('addressEn')}
+            className={errors.addressEn ? 'border-destructive' : ''}
+          />
+          {errors.addressEn && (
+            <p className="text-sm text-destructive">{errors.addressEn.message}</p>
+          )}
+        </Field>
 
         <Field>
           <FieldLabel htmlFor="totalUnits">{t('totalUnits')}</FieldLabel>

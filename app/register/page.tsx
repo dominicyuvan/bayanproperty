@@ -7,21 +7,13 @@ import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Building2, Eye, EyeOff, Globe } from 'lucide-react'
+import { Building2, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/auth-context'
-import { useLocale } from '@/contexts/locale-context'
-import { localeNames } from '@/i18n/config'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   Select,
   SelectContent,
@@ -33,7 +25,6 @@ import { Spinner } from '@/components/ui/spinner'
 
 const registerSchema = z.object({
   nameEn: z.string().min(2),
-  nameAr: z.string().min(2),
   email: z.string().email(),
   phone: z.string().regex(/^(\+968)?[0-9]{8}$/, 'Invalid Oman phone number'),
   password: z.string().min(6),
@@ -52,7 +43,6 @@ export default function RegisterPage() {
   const tErrors = useTranslations('errors')
   const router = useRouter()
   const { signUp } = useAuth()
-  const { locale, setLocale } = useLocale()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -72,14 +62,15 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true)
     try {
+      const name = data.nameEn.trim()
       await signUp(data.email, data.password, {
-        nameEn: data.nameEn,
-        nameAr: data.nameAr,
+        nameEn: name,
+        nameAr: name,
         phone: data.phone.startsWith('+968') ? data.phone : `+968${data.phone}`,
         role: data.role,
-        languagePreference: locale,
+        languagePreference: 'en',
       })
-      toast.success(locale === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully')
+      toast.success('Account created successfully')
       router.push('/dashboard')
     } catch (error) {
       toast.error(tErrors('somethingWentWrong'))
@@ -90,25 +81,6 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/30 p-4">
-      {/* Language Switcher */}
-      <div className="absolute end-4 top-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Globe className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setLocale('en')}>
-              {localeNames.en}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLocale('ar')}>
-              {localeNames.ar}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
@@ -120,28 +92,18 @@ export default function RegisterPage() {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <FieldGroup>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field>
-                  <FieldLabel htmlFor="nameEn">Name (English)</FieldLabel>
-                  <Input
-                    id="nameEn"
-                    placeholder="John Doe"
-                    {...register('nameEn')}
-                    className={errors.nameEn ? 'border-destructive' : ''}
-                  />
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="nameAr">الاسم (عربي)</FieldLabel>
-                  <Input
-                    id="nameAr"
-                    placeholder="جون دو"
-                    dir="rtl"
-                    {...register('nameAr')}
-                    className={errors.nameAr ? 'border-destructive' : ''}
-                  />
-                </Field>
-              </div>
+              <Field>
+                <FieldLabel htmlFor="nameEn">Full name</FieldLabel>
+                <Input
+                  id="nameEn"
+                  placeholder="John Doe"
+                  {...register('nameEn')}
+                  className={errors.nameEn ? 'border-destructive' : ''}
+                />
+                {errors.nameEn && (
+                  <p className="text-sm text-destructive">{errors.nameEn.message}</p>
+                )}
+              </Field>
 
               <Field>
                 <FieldLabel htmlFor="email">{t('email')}</FieldLabel>
@@ -181,9 +143,9 @@ export default function RegisterPage() {
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="tenant">Tenant / مستأجر</SelectItem>
-                    <SelectItem value="owner">Owner / مالك</SelectItem>
-                    <SelectItem value="property_manager">Property Manager / مدير عقارات</SelectItem>
+                    <SelectItem value="tenant">Tenant</SelectItem>
+                    <SelectItem value="owner">Owner</SelectItem>
+                    <SelectItem value="property_manager">Property manager</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>

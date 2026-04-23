@@ -24,7 +24,6 @@ function parseRole(value: unknown): UserRole {
  * Normalizes Firestore `users/{id}` payloads into a `User` (handles Timestamp fields).
  */
 export function deserializeUser(id: string, data: Record<string, unknown>): User {
-  const lang = data.languagePreference === 'ar' ? 'ar' : 'en'
   return {
     id,
     email: String(data.email ?? ''),
@@ -32,7 +31,7 @@ export function deserializeUser(id: string, data: Record<string, unknown>): User
     nameEn: String(data.nameEn ?? ''),
     nameAr: String(data.nameAr ?? ''),
     role: parseRole(data.role),
-    languagePreference: lang,
+    languagePreference: 'en',
     avatarUrl: data.avatarUrl ? String(data.avatarUrl) : undefined,
     avatarStoragePath: data.avatarStoragePath ? String(data.avatarStoragePath) : undefined,
     createdAt: toDate(data.createdAt),

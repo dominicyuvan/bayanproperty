@@ -9,8 +9,6 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { Spinner } from '@/components/ui/spinner'
 import {
   Select,
@@ -19,9 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useEnToArAutofill } from '@/hooks/use-en-to-ar-autofill'
 import { useAuth } from '@/contexts/auth-context'
-import { useLocale } from '@/contexts/locale-context'
 import { db, isFirebaseConfigured } from '@/lib/firebase'
 import { createTenantRecord } from '@/lib/tenants-db'
 import type { TenantLeaseStatus } from '@/lib/types'
@@ -30,7 +26,6 @@ const leaseStatuses: TenantLeaseStatus[] = ['active', 'expired', 'pending']
 
 type TenantFormData = {
   nameEn: string
-  nameAr: string
   email: string
   phone: string
   unitNumber: string
@@ -51,18 +46,14 @@ function normalizeOmanPhone(phone: string): string {
 export function TenantForm({ onSuccess }: TenantFormProps) {
   const t = useTranslations('tenants')
   const tCommon = useTranslations('common')
-  const tForms = useTranslations('forms')
   const tErrors = useTranslations('errors')
-  const { locale } = useLocale()
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const [autoAr, setAutoAr] = useState(true)
 
   const tenantSchema = useMemo(
     () =>
       z.object({
         nameEn: z.string().min(2, tErrors('minLength', { min: 2 })),
-        nameAr: z.string().min(2, tErrors('minLength', { min: 2 })),
         email: z.string().email(tErrors('invalidEmail')),
         phone: z.string().regex(/^(\+968)?[0-9]{8}$/, tErrors('invalidPhone')),
         unitNumber: z.string().min(1, tErrors('required')).max(80),
@@ -74,28 +65,17 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     control,
     formState: { errors },
   } = useForm<TenantFormData>({
     resolver: zodResolver(tenantSchema),
     defaultValues: {
       nameEn: '',
-      nameAr: '',
       email: '',
       phone: '',
       unitNumber: '',
       leaseStatus: 'pending',
     },
-  })
-
-  const { translating: nameTranslating } = useEnToArAutofill({
-    watch,
-    setValue,
-    enPath: 'nameEn',
-    arPath: 'nameAr',
-    options: { enabled: autoAr, minSourceChars: 2, debounceMs: 600 },
   })
 
   const onSubmit = async (data: TenantFormData) => {
@@ -110,9 +90,10 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
 
     setIsLoading(true)
     try {
+      const name = data.nameEn.trim()
       await createTenantRecord({
-        nameEn: data.nameEn,
-        nameAr: data.nameAr,
+        nameEn: name,
+        nameAr: name,
         email: data.email,
         phone: normalizeOmanPhone(data.phone),
         unitNumber: data.unitNumber,
@@ -139,53 +120,18 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FieldGroup>
-        <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-          <div className="space-y-0.5 pe-2">
-            <Label htmlFor="tenant-auto-ar" className="text-sm font-medium">
-              {tForms('autoTranslateAr')}
-            </Label>
-            {nameTranslating && (
-              <p className="text-xs text-muted-foreground">
-                {tForms('translating')} <Spinner className="ms-1 inline size-3 align-middle" />
-              </p>
-            )}
-          </div>
-          <Switch id="tenant-auto-ar" checked={autoAr} onCheckedChange={setAutoAr} />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="tenant-nameEn">{tCommon('name')} (English)</FieldLabel>
-            <Input
-              id="tenant-nameEn"
-              placeholder="Tenant name"
-              {...register('nameEn')}
-              className={errors.nameEn ? 'border-destructive' : ''}
-            />
-            {errors.nameEn && (
-              <p className="text-sm text-destructive">{errors.nameEn.message}</p>
-            )}
-          </Field>
-
-          <Field>
-            <div className="flex items-center justify-between gap-2">
-              <FieldLabel htmlFor="tenant-nameAr">{tCommon('name')} (عربي)</FieldLabel>
-              {nameTranslating && autoAr && (
-                <span className="text-xs text-muted-foreground">{tForms('translating')}</span>
-              )}
-            </div>
-            <Input
-              id="tenant-nameAr"
-              placeholder="اسم المستأجر"
-              dir="rtl"
-              {...register('nameAr')}
-              className={errors.nameAr ? 'border-destructive' : ''}
-            />
-            {errors.nameAr && (
-              <p className="text-sm text-destructive">{errors.nameAr.message}</p>
-            )}
-          </Field>
-        </div>
+        <Field>
+          <FieldLabel htmlFor="tenant-nameEn">{tCommon('name')}</FieldLabel>
+          <Input
+            id="tenant-nameEn"
+            placeholder="Tenant name"
+            {...register('nameEn')}
+            className={errors.nameEn ? 'border-destructive' : ''}
+          />
+          {errors.nameEn && (
+            <p className="text-sm text-destructive">{errors.nameEn.message}</p>
+          )}
+        </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field>
@@ -224,7 +170,7 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
             <FieldLabel htmlFor="tenant-unitNumber">{t('currentUnit')}</FieldLabel>
             <Input
               id="tenant-unitNumber"
-              placeholder={locale === 'ar' ? 'مثال: أ-101' : 'e.g. A-101'}
+              placeholder="e.g. A-101"
               {...register('unitNumber')}
               className={errors.unitNumber ? 'border-destructive' : ''}
             />

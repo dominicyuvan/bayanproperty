@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Search, Wrench, MoreHorizontal, Pencil, Trash2, Eye, AlertTriangle, Clock, CheckCircle2, XCircle } from 'lucide-react'
-import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -64,17 +63,17 @@ const statusStyles: Record<MaintenanceStatus, { icon: React.ComponentType<{ clas
 export default function MaintenancePage() {
   const t = useTranslations('maintenance')
   const tCommon = useTranslations('common')
-  const { locale } = useLocale()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
   const filteredRequests = demoRequests.filter((request) => {
-    const title = locale === 'ar' ? request.titleAr : request.title
-    const matchesSearch = 
-      title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.unitNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    const q = searchQuery.toLowerCase()
+    const matchesSearch =
+      request.title.toLowerCase().includes(q) ||
+      request.titleAr.toLowerCase().includes(q) ||
+      request.unitNumber.toLowerCase().includes(q)
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter
     const matchesPriority = priorityFilter === 'all' || request.priority === priorityFilter
     return matchesSearch && matchesStatus && matchesPriority
@@ -205,8 +204,8 @@ export default function MaintenancePage() {
       {/* Requests Cards */}
       <div className="grid gap-4 md:grid-cols-2">
         {filteredRequests.map((request) => {
-          const title = locale === 'ar' ? request.titleAr : request.title
-          const tenantName = locale === 'ar' ? request.tenantNameAr : request.tenantNameEn
+          const title = request.title
+          const tenantName = request.tenantNameEn
           const priorityStyle = priorityStyles[request.priority]
           const statusStyle = statusStyles[request.status]
           const StatusIcon = statusStyle.icon
@@ -266,7 +265,7 @@ export default function MaintenancePage() {
                 )}
 
                 <p className="text-xs text-muted-foreground">
-                  Created: {request.createdAt.toLocaleDateString(locale === 'ar' ? 'ar-OM' : 'en-OM')}
+                  Created: {request.createdAt.toLocaleDateString('en-OM')}
                 </p>
               </CardContent>
             </Card>

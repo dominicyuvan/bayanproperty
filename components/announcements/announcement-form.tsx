@@ -22,9 +22,7 @@ import { Spinner } from '@/components/ui/spinner'
 
 const announcementSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
-  titleAr: z.string().min(5, 'Arabic title must be at least 5 characters'),
   content: z.string().min(20, 'Content must be at least 20 characters'),
-  contentAr: z.string().min(20, 'Arabic content must be at least 20 characters'),
   type: z.enum(['general', 'urgent', 'maintenance', 'payment_reminder', 'association']),
   targetAudience: z.enum(['all', 'tenants', 'owners', 'association_members']),
   priority: z.enum(['normal', 'high', 'urgent']),
@@ -67,8 +65,10 @@ export function AnnouncementForm({ onSuccess, initialData }: AnnouncementFormPro
   const onSubmit = async (data: AnnouncementFormData) => {
     setIsLoading(true)
     try {
+      const title = data.title.trim()
+      const content = data.content.trim()
       // TODO: Save to Firebase and send notifications
-      console.log('Announcement data:', data)
+      console.log('Announcement data:', { ...data, titleAr: title, contentAr: content })
       toast.success('Announcement published successfully')
       onSuccess?.()
     } catch (error) {
@@ -81,61 +81,30 @@ export function AnnouncementForm({ onSuccess, initialData }: AnnouncementFormPro
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FieldGroup>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="title">Title (English)</FieldLabel>
-            <Input
-              id="title"
-              placeholder="Announcement title"
-              {...register('title')}
-              className={errors.title ? 'border-destructive' : ''}
-            />
-            {errors.title && (
-              <p className="text-sm text-destructive">{errors.title.message}</p>
-            )}
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="titleAr">العنوان (عربي)</FieldLabel>
-            <Input
-              id="titleAr"
-              placeholder="عنوان الإعلان"
-              dir="rtl"
-              {...register('titleAr')}
-              className={errors.titleAr ? 'border-destructive' : ''}
-            />
-            {errors.titleAr && (
-              <p className="text-sm text-destructive">{errors.titleAr.message}</p>
-            )}
-          </Field>
-        </div>
+        <Field>
+          <FieldLabel htmlFor="title">Title</FieldLabel>
+          <Input
+            id="title"
+            placeholder="Announcement title"
+            {...register('title')}
+            className={errors.title ? 'border-destructive' : ''}
+          />
+          {errors.title && (
+            <p className="text-sm text-destructive">{errors.title.message}</p>
+          )}
+        </Field>
 
         <Field>
-          <FieldLabel htmlFor="content">{t('content')} (English)</FieldLabel>
+          <FieldLabel htmlFor="content">{t('content')}</FieldLabel>
           <Textarea
             id="content"
             placeholder="Write your announcement content..."
-            rows={3}
+            rows={4}
             {...register('content')}
             className={errors.content ? 'border-destructive' : ''}
           />
           {errors.content && (
             <p className="text-sm text-destructive">{errors.content.message}</p>
-          )}
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor="contentAr">{t('content')} (عربي)</FieldLabel>
-          <Textarea
-            id="contentAr"
-            placeholder="اكتب محتوى الإعلان..."
-            dir="rtl"
-            rows={3}
-            {...register('contentAr')}
-            className={errors.contentAr ? 'border-destructive' : ''}
-          />
-          {errors.contentAr && (
-            <p className="text-sm text-destructive">{errors.contentAr.message}</p>
           )}
         </Field>
 
@@ -197,11 +166,7 @@ export function AnnouncementForm({ onSuccess, initialData }: AnnouncementFormPro
 
         <Field>
           <FieldLabel htmlFor="expiryDate">{t('expiryDate')} (Optional)</FieldLabel>
-          <Input
-            id="expiryDate"
-            type="date"
-            {...register('expiryDate')}
-          />
+          <Input id="expiryDate" type="date" {...register('expiryDate')} />
         </Field>
 
         <div className="rounded-lg border p-4">

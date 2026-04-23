@@ -22,9 +22,8 @@ import { UNIT_TYPES } from '@/lib/types'
 const unitSchema = z.object({
   propertyId: z.string().min(1, 'Please select a property'),
   unitNumber: z.string().min(1, 'Unit number is required'),
-  municipalityUnitNumber: z.string().max(120),
   type: z.enum(['apartment', 'studio', 'penthouse', 'office', 'shop', 'warehouse', 'villa']),
-  floor: z.number().min(0, 'Floor must be 0 or higher'),
+  floor: z.coerce.number().int().min(0, 'Floor must be 0 or higher'),
   bedrooms: z.number().min(0, 'Bedrooms must be 0 or higher'),
   bathrooms: z.number().min(1, 'Must have at least 1 bathroom'),
   areaSquareMeters: z.number().min(1, 'Area must be greater than 0'),
@@ -61,7 +60,6 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
       floor: 0,
       bedrooms: 1,
       bathrooms: 1,
-      municipalityUnitNumber: '',
       ...initialData,
     },
   })
@@ -120,20 +118,20 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="municipalityUnitNumber">{t('municipalityUnitNumber')}</FieldLabel>
+            <FieldLabel htmlFor="floor">{t('floor')}</FieldLabel>
             <Input
-              id="municipalityUnitNumber"
-              placeholder="Baladiya ref."
-              {...register('municipalityUnitNumber')}
-              className={errors.municipalityUnitNumber ? 'border-destructive' : ''}
+              id="floor"
+              type="number"
+              min={0}
+              step={1}
+              placeholder="0"
+              {...register('floor', { valueAsNumber: true })}
+              className={errors.floor ? 'border-destructive' : ''}
             />
-            <p className="text-xs text-muted-foreground">{t('municipalityUnitNumberHelp')}</p>
-            {errors.municipalityUnitNumber && (
-              <p className="text-sm text-destructive">{errors.municipalityUnitNumber.message}</p>
-            )}
+            {errors.floor && <p className="text-sm text-destructive">{errors.floor.message}</p>}
           </Field>
 
-          <Field className="lg:col-span-1">
+          <Field className="sm:col-span-2 lg:col-span-1">
             <FieldLabel htmlFor="type">{t('unitType')}</FieldLabel>
             <Select
               value={watch('type')}
@@ -153,18 +151,7 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field>
-            <FieldLabel htmlFor="floor">{t('floor')}</FieldLabel>
-            <Input
-              id="floor"
-              type="number"
-              min={0}
-              {...register('floor', { valueAsNumber: true })}
-              className={errors.floor ? 'border-destructive' : ''}
-            />
-          </Field>
-
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field>
             <FieldLabel htmlFor="bedrooms">{t('bedrooms')}</FieldLabel>
             <Input

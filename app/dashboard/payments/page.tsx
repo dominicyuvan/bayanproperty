@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Search, CreditCard, MoreHorizontal, Pencil, Trash2, Eye, AlertCircle, CheckCircle2, Clock } from 'lucide-react'
-import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -65,7 +64,6 @@ const statusStyles: Record<PaymentStatus, { icon: React.ComponentType<{ classNam
 export default function PaymentsPage() {
   const t = useTranslations('payments')
   const tCommon = useTranslations('common')
-  const { locale } = useLocale()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
@@ -73,10 +71,12 @@ export default function PaymentsPage() {
   useOpenAddDialogFromQuery(setIsAddDialogOpen)
 
   const filteredPayments = demoPayments.filter((payment) => {
-    const name = locale === 'ar' ? payment.tenantNameAr : payment.tenantNameEn
-    const matchesSearch = 
-      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.unitNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    const name = payment.tenantNameEn
+    const q = searchQuery.toLowerCase()
+    const matchesSearch =
+      name.toLowerCase().includes(q) ||
+      payment.tenantNameAr.toLowerCase().includes(q) ||
+      payment.unitNumber.toLowerCase().includes(q)
     const matchesStatus = statusFilter === 'all' || payment.status === statusFilter
     const matchesType = typeFilter === 'all' || payment.type === typeFilter
     return matchesSearch && matchesStatus && matchesType
@@ -209,7 +209,7 @@ export default function PaymentsPage() {
           </TableHeader>
           <TableBody>
             {filteredPayments.map((payment) => {
-              const tenantName = locale === 'ar' ? payment.tenantNameAr : payment.tenantNameEn
+              const tenantName = payment.tenantNameEn
               const style = statusStyles[payment.status]
               const StatusIcon = style.icon
 
@@ -236,7 +236,7 @@ export default function PaymentsPage() {
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-muted-foreground tabular-nums">
-                      {payment.dueDate.toLocaleDateString(locale === 'ar' ? 'ar-OM' : 'en-OM')}
+                      {payment.dueDate.toLocaleDateString('en-OM')}
                     </span>
                   </TableCell>
                   <TableCell>

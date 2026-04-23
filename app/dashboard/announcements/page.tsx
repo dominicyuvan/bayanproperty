@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Search, Megaphone, MoreHorizontal, Pencil, Trash2, Eye, Bell, Mail, MessageSquare, AlertTriangle, Info, Calendar } from 'lucide-react'
-import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -64,14 +63,15 @@ const priorityStyles: Record<AnnouncementPriority, { className: string }> = {
 export default function AnnouncementsPage() {
   const t = useTranslations('announcements')
   const tCommon = useTranslations('common')
-  const { locale } = useLocale()
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
   const filteredAnnouncements = demoAnnouncements.filter((announcement) => {
-    const title = locale === 'ar' ? announcement.titleAr : announcement.title
-    const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase())
+    const q = searchQuery.toLowerCase()
+    const matchesSearch =
+      announcement.title.toLowerCase().includes(q) ||
+      announcement.titleAr.toLowerCase().includes(q)
     const matchesType = typeFilter === 'all' || announcement.type === typeFilter
     return matchesSearch && matchesType
   })
@@ -134,8 +134,8 @@ export default function AnnouncementsPage() {
       {/* Announcements List */}
       <div className="space-y-4">
         {filteredAnnouncements.map((announcement) => {
-          const title = locale === 'ar' ? announcement.titleAr : announcement.title
-          const content = locale === 'ar' ? announcement.contentAr : announcement.content
+          const title = announcement.title
+          const content = announcement.content
           const TypeIcon = typeIcons[announcement.type]
           const priorityStyle = priorityStyles[announcement.priority]
 
@@ -158,7 +158,7 @@ export default function AnnouncementsPage() {
                         <span>•</span>
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {announcement.publishedAt.toLocaleDateString(locale === 'ar' ? 'ar-OM' : 'en-OM')}
+                          {announcement.publishedAt.toLocaleDateString('en-OM')}
                         </span>
                       </CardDescription>
                     </div>

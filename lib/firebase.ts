@@ -1,6 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app'
 import { getAuth, Auth } from 'firebase/auth'
-import { getFirestore, Firestore } from 'firebase/firestore'
+import { getFirestore, initializeFirestore, type Firestore } from 'firebase/firestore'
 import { getStorage, FirebaseStorage } from 'firebase/storage'
 
 const defaultFirebaseConfig = {
@@ -37,10 +37,21 @@ let auth: Auth | null = null
 let db: Firestore | null = null
 let storage: FirebaseStorage | null = null
 
+function initFirestore(instance: FirebaseApp): Firestore {
+  try {
+    return initializeFirestore(instance, {
+      // Avoids writes/queries hanging indefinitely on networks that break Firestore’s default WebChannel transport.
+      experimentalAutoDetectLongPolling: true,
+    })
+  } catch {
+    return getFirestore(instance)
+  }
+}
+
 if (isFirebaseConfigured) {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
   auth = getAuth(app)
-  db = getFirestore(app)
+  db = initFirestore(app)
   storage = getStorage(app)
 }
 

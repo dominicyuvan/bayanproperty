@@ -22,7 +22,6 @@ import { Spinner } from '@/components/ui/spinner'
 const maintenanceSchema = z.object({
   unitId: z.string().min(1, 'Please select a unit'),
   title: z.string().min(5, 'Title must be at least 5 characters'),
-  titleAr: z.string().optional(),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
 })
@@ -66,7 +65,7 @@ export function MaintenanceForm({ onSuccess, initialData }: MaintenanceFormProps
     setIsLoading(true)
     try {
       // TODO: Save to Firebase
-      console.log('Maintenance request:', data)
+      console.log('Maintenance request:', { ...data, titleAr: data.title.trim() })
       toast.success('Request submitted successfully')
       onSuccess?.()
     } catch (error) {
@@ -101,30 +100,18 @@ export function MaintenanceForm({ onSuccess, initialData }: MaintenanceFormProps
           )}
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="title">Title (English)</FieldLabel>
-            <Input
-              id="title"
-              placeholder="Brief description of the issue"
-              {...register('title')}
-              className={errors.title ? 'border-destructive' : ''}
-            />
-            {errors.title && (
-              <p className="text-sm text-destructive">{errors.title.message}</p>
-            )}
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="titleAr">العنوان (عربي)</FieldLabel>
-            <Input
-              id="titleAr"
-              placeholder="وصف مختصر للمشكلة"
-              dir="rtl"
-              {...register('titleAr')}
-            />
-          </Field>
-        </div>
+        <Field>
+          <FieldLabel htmlFor="title">Title</FieldLabel>
+          <Input
+            id="title"
+            placeholder="Brief description of the issue"
+            {...register('title')}
+            className={errors.title ? 'border-destructive' : ''}
+          />
+          {errors.title && (
+            <p className="text-sm text-destructive">{errors.title.message}</p>
+          )}
+        </Field>
 
         <Field>
           <FieldLabel htmlFor="description">{tCommon('description')}</FieldLabel>

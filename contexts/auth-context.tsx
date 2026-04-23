@@ -130,9 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       phone: userData.phone || '',
       nameEn: userData.nameEn || '',
-      nameAr: userData.nameAr || '',
+      nameAr: userData.nameAr || userData.nameEn || '',
       role: (userData.role as UserRole) || 'tenant',
-      languagePreference: userData.languagePreference || 'en',
+      languagePreference: 'en',
       createdAt: new Date(),
       updatedAt: new Date(),
     }

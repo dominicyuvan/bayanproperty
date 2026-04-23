@@ -80,7 +80,7 @@ export interface User {
   nameEn: string
   nameAr: string
   role: UserRole
-  languagePreference: 'en' | 'ar'
+  languagePreference: 'en'
   avatarUrl?: string
   /** Firebase Storage path for the current profile photo (used to delete old file on replace) */
   avatarStoragePath?: string
@@ -154,8 +154,6 @@ export interface Unit {
   id: string
   propertyId: string
   unitNumber: string
-  /** Municipality-registered unit identifier (e.g. Baladiya unit ref) */
-  municipalityUnitNumber?: string
   type: UnitType
   floor: number
   bedrooms: number

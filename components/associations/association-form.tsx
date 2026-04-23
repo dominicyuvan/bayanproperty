@@ -9,15 +9,11 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { Spinner } from '@/components/ui/spinner'
-import { useEnToArAutofill } from '@/hooks/use-en-to-ar-autofill'
 import { formatOMR } from '@/lib/types'
 
 const associationSchema = z.object({
   nameEn: z.string().min(2, 'Name must be at least 2 characters'),
-  nameAr: z.string().min(2, 'Name must be at least 2 characters'),
   sellableAreaSquareMeters: z.coerce
     .number({ invalid_type_error: 'Enter sellable area' })
     .min(0.01, 'Sellable area must be greater than 0'),
@@ -39,10 +35,8 @@ interface AssociationFormProps {
 export function AssociationForm({ onSuccess, initialData }: AssociationFormProps) {
   const t = useTranslations('associations')
   const tCommon = useTranslations('common')
-  const tForms = useTranslations('forms')
   const tErrors = useTranslations('errors')
   const [isLoading, setIsLoading] = useState(false)
-  const [autoAr, setAutoAr] = useState(true)
 
   const {
     register,
@@ -71,19 +65,12 @@ export function AssociationForm({ onSuccess, initialData }: AssociationFormProps
     setValue('annualBudget', total, { shouldValidate: true })
   }, [sellableArea, feePerSqm, setValue])
 
-  const { translating: nameTranslating } = useEnToArAutofill({
-    watch,
-    setValue,
-    enPath: 'nameEn',
-    arPath: 'nameAr',
-    options: { enabled: autoAr, minSourceChars: 2, debounceMs: 600 },
-  })
-
   const onSubmit = async (data: AssociationFormData) => {
     setIsLoading(true)
     try {
       // TODO: Save to Firebase
-      console.log('Association data:', data)
+      const name = data.nameEn.trim()
+      console.log('Association data:', { ...data, nameAr: name })
       toast.success('Association saved successfully')
       onSuccess?.()
     } catch (error) {
@@ -96,53 +83,18 @@ export function AssociationForm({ onSuccess, initialData }: AssociationFormProps
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FieldGroup>
-        <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-          <div className="space-y-0.5 pe-2">
-            <Label htmlFor="assoc-auto-ar" className="text-sm font-medium">
-              {tForms('autoTranslateAr')}
-            </Label>
-            {nameTranslating && (
-              <p className="text-xs text-muted-foreground">
-                {tForms('translating')} <Spinner className="ms-1 inline size-3 align-middle" />
-              </p>
-            )}
-          </div>
-          <Switch id="assoc-auto-ar" checked={autoAr} onCheckedChange={setAutoAr} />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="nameEn">{tCommon('name')} (English)</FieldLabel>
-            <Input
-              id="nameEn"
-              placeholder="Association name"
-              {...register('nameEn')}
-              className={errors.nameEn ? 'border-destructive' : ''}
-            />
-            {errors.nameEn && (
-              <p className="text-sm text-destructive">{errors.nameEn.message}</p>
-            )}
-          </Field>
-
-          <Field>
-            <div className="flex items-center justify-between gap-2">
-              <FieldLabel htmlFor="nameAr">{tCommon('name')} (عربي)</FieldLabel>
-              {nameTranslating && autoAr && (
-                <span className="text-xs text-muted-foreground">{tForms('translating')}</span>
-              )}
-            </div>
-            <Input
-              id="nameAr"
-              placeholder="اسم الجمعية"
-              dir="rtl"
-              {...register('nameAr')}
-              className={errors.nameAr ? 'border-destructive' : ''}
-            />
-            {errors.nameAr && (
-              <p className="text-sm text-destructive">{errors.nameAr.message}</p>
-            )}
-          </Field>
-        </div>
+        <Field>
+          <FieldLabel htmlFor="nameEn">{tCommon('name')}</FieldLabel>
+          <Input
+            id="nameEn"
+            placeholder="Association name"
+            {...register('nameEn')}
+            className={errors.nameEn ? 'border-destructive' : ''}
+          />
+          {errors.nameEn && (
+            <p className="text-sm text-destructive">{errors.nameEn.message}</p>
+          )}
+        </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field>

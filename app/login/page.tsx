@@ -7,23 +7,15 @@ import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Building2, Eye, EyeOff, Globe, AlertTriangle } from 'lucide-react'
+import { Building2, Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { FirebaseError } from 'firebase/app'
 import { useAuth } from '@/contexts/auth-context'
-import { useLocale } from '@/contexts/locale-context'
-import { localeNames } from '@/i18n/config'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Spinner } from '@/components/ui/spinner'
 
 const loginSchema = z.object({
@@ -39,7 +31,6 @@ export default function LoginPage() {
   const tErrors = useTranslations('errors')
   const router = useRouter()
   const { signIn, isConfigured, user, initialized, loading } = useAuth()
-  const { locale, setLocale } = useLocale()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -66,7 +57,7 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       await signIn(data.email, data.password)
-      toast.success(locale === 'ar' ? 'تم تسجيل الدخول بنجاح' : 'Signed in successfully')
+      toast.success('Signed in successfully')
       router.replace('/dashboard')
     } catch (error) {
       if (error instanceof FirebaseError) {
@@ -90,25 +81,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/30 p-4">
-      {/* Language Switcher */}
-      <div className="absolute end-4 top-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Globe className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setLocale('en')}>
-              {localeNames.en}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLocale('ar')}>
-              {localeNames.ar}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">

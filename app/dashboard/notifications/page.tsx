@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Bell, Check, Mail, MessageSquare, CreditCard, Wrench, Megaphone, Building } from 'lucide-react'
-import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -32,7 +31,6 @@ const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
 export default function NotificationsPage() {
   const t = useTranslations('notifications')
   const tCommon = useTranslations('common')
-  const { locale } = useLocale()
   const [notifications, setNotifications] = useState(demoNotifications)
   
   // Notification preferences state
@@ -117,8 +115,8 @@ export default function NotificationsPage() {
             </div>
           ) : (
             notifications.map((notification) => {
-              const title = locale === 'ar' ? notification.titleAr : notification.titleEn
-              const message = locale === 'ar' ? notification.messageAr : notification.messageEn
+              const title = notification.titleEn
+              const message = notification.messageEn
               const Icon = typeIcons[notification.type] || Bell
 
               return (
@@ -153,7 +151,7 @@ export default function NotificationsPage() {
                         {message}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
+                        {new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
                           Math.round((notification.createdAt.getTime() - Date.now()) / 3600000),
                           'hour'
                         )}

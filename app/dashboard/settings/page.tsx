@@ -6,13 +6,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { User, Globe, Shield, Image as ImageIcon, FileStack } from 'lucide-react'
+import { User, Shield, Image as ImageIcon, FileStack } from 'lucide-react'
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, updateProfile } from 'firebase/auth'
 import { useAuth } from '@/contexts/auth-context'
-import { useLocale } from '@/contexts/locale-context'
-import { localeNames } from '@/i18n/config'
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
-import { saveUserLanguagePreference, saveUserProfileFields } from '@/lib/user-profile'
+import { saveUserProfileFields } from '@/lib/user-profile'
 import { PROFILE_IMAGE_MAX_BYTES, uploadProfileAvatar } from '@/lib/user-uploads'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,19 +18,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { UserVerificationDocuments } from '@/components/settings/user-verification-documents'
 
 const profileSchema = z.object({
   nameEn: z.string().min(2, 'Name must be at least 2 characters'),
-  nameAr: z.string().min(2, 'Name must be at least 2 characters'),
   phone: z.string().regex(/^(\+968)?[0-9]{8}$/, 'Invalid Oman phone number'),
 })
 
@@ -57,13 +47,12 @@ export default function SettingsPage() {
   const tAuth = useTranslations('auth')
   const tErrors = useTranslations('errors')
   const { user, refreshUserProfile } = useAuth()
-  const { locale, setLocale } = useLocale()
   const [isProfileLoading, setIsProfileLoading] = useState(false)
   const [isPasswordLoading, setIsPasswordLoading] = useState(false)
   const [isAvatarLoading, setIsAvatarLoading] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
-  const displayName = locale === 'ar' ? user?.nameAr : user?.nameEn
+  const displayName = user?.nameEn?.trim() || user?.nameAr?.trim() || ''
   const initials = displayName
     ? displayName
         .split(' ')
@@ -79,7 +68,6 @@ export default function SettingsPage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       nameEn: '',
-      nameAr: '',
       phone: '',
     },
   })
@@ -89,10 +77,9 @@ export default function SettingsPage() {
     const phoneDigits = user.phone?.replace(/^\+968/, '') ?? ''
     profileForm.reset({
       nameEn: user.nameEn,
-      nameAr: user.nameAr,
       phone: phoneDigits,
     })
-  }, [user?.id, user?.nameEn, user?.nameAr, user?.phone, profileForm.reset])
+  }, [user?.id, user?.nameEn, user?.phone, profileForm.reset])
 
   const passwordForm = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -109,11 +96,11 @@ export default function SettingsPage() {
     }
     setIsProfileLoading(true)
     try {
+      const name = data.nameEn.trim()
       await saveUserProfileFields(user.id, {
-        nameEn: data.nameEn,
-        nameAr: data.nameAr,
+        nameEn: name,
+        nameAr: name,
         phone: data.phone,
-        languagePreference: locale,
       })
       if (auth?.currentUser?.uid === user.id) {
         await updateProfile(auth.currentUser, { displayName: data.nameEn.trim() })
@@ -191,17 +178,6 @@ export default function SettingsPage() {
     }
   }
 
-  const persistLocale = async (value: 'en' | 'ar') => {
-    setLocale(value)
-    if (!user || !db) return
-    try {
-      await saveUserLanguagePreference(user.id, value)
-      await refreshUserProfile()
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -221,10 +197,6 @@ export default function SettingsPage() {
               {t('documentsTitle')}
             </TabsTrigger>
           )}
-          <TabsTrigger value="language" className="gap-2">
-            <Globe className="h-4 w-4" />
-            {t('language')}
-          </TabsTrigger>
           <TabsTrigger value="security" className="gap-2">
             <Shield className="h-4 w-4" />
             {t('security')}
@@ -282,32 +254,17 @@ export default function SettingsPage() {
                 </div>
 
                 <FieldGroup>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field>
-                      <FieldLabel htmlFor="nameEn">{tCommon('name')} (English)</FieldLabel>
-                      <Input
-                        id="nameEn"
-                        {...profileForm.register('nameEn')}
-                        className={profileForm.formState.errors.nameEn ? 'border-destructive' : ''}
-                      />
-                      {profileForm.formState.errors.nameEn && (
-                        <p className="text-sm text-destructive">{profileForm.formState.errors.nameEn.message}</p>
-                      )}
-                    </Field>
-
-                    <Field>
-                      <FieldLabel htmlFor="nameAr">{tCommon('name')} (عربي)</FieldLabel>
-                      <Input
-                        id="nameAr"
-                        dir="rtl"
-                        {...profileForm.register('nameAr')}
-                        className={profileForm.formState.errors.nameAr ? 'border-destructive' : ''}
-                      />
-                      {profileForm.formState.errors.nameAr && (
-                        <p className="text-sm text-destructive">{profileForm.formState.errors.nameAr.message}</p>
-                      )}
-                    </Field>
-                  </div>
+                  <Field>
+                    <FieldLabel htmlFor="nameEn">{tCommon('name')}</FieldLabel>
+                    <Input
+                      id="nameEn"
+                      {...profileForm.register('nameEn')}
+                      className={profileForm.formState.errors.nameEn ? 'border-destructive' : ''}
+                    />
+                    {profileForm.formState.errors.nameEn && (
+                      <p className="text-sm text-destructive">{profileForm.formState.errors.nameEn.message}</p>
+                    )}
+                  </Field>
 
                   <Field>
                     <FieldLabel htmlFor="email">{tCommon('email')}</FieldLabel>
@@ -346,30 +303,6 @@ export default function SettingsPage() {
             <UserVerificationDocuments userId={user.id} />
           </TabsContent>
         )}
-
-        <TabsContent value="language" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('language')}</CardTitle>
-              <CardDescription>{t('languageDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Field>
-                <FieldLabel>{t('language')}</FieldLabel>
-                <Select value={locale} onValueChange={(value) => persistLocale(value as 'en' | 'ar')}>
-                  <SelectTrigger className="w-full max-w-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">{localeNames.en}</SelectItem>
-                    <SelectItem value="ar">{localeNames.ar}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="mt-2 text-sm text-muted-foreground">{t('languageUiHint')}</p>
-              </Field>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="security" className="mt-6">
           <Card>

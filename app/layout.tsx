@@ -1,17 +1,14 @@
 import type { Metadata, Viewport } from 'next'
-import { Tajawal } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
-import { getLocale, getMessages } from 'next-intl/server'
+import { getMessages } from 'next-intl/server'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/auth-context'
-import { LocaleProvider } from '@/contexts/locale-context'
-import { localeDirection, type Locale } from '@/i18n/config'
 import './globals.css'
 
-const tajawal = Tajawal({
-  subsets: ['arabic', 'latin'],
-  weight: ['200', '300', '400', '500', '700', '800', '900'],
-  variable: '--font-tajawal',
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
 })
 
 export const metadata: Metadata = {
@@ -49,24 +46,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const locale = await getLocale() as Locale
   const messages = await getMessages()
-  const direction = localeDirection[locale]
 
   return (
-    <html lang={locale} dir={direction} className="bg-background">
-      <body className={`${tajawal.variable} font-sans antialiased`}>
+    <html lang="en" dir="ltr" className="bg-background">
+      <body className={`${inter.variable} font-sans antialiased`}>
         <NextIntlClientProvider messages={messages}>
-          <LocaleProvider initialLocale={locale}>
-            <AuthProvider>
-              {children}
-              <Toaster 
-                position={direction === 'rtl' ? 'top-left' : 'top-right'}
-                richColors 
-                closeButton
-              />
-            </AuthProvider>
-          </LocaleProvider>
+          <AuthProvider>
+            {children}
+            <Toaster position="top-right" richColors closeButton />
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>

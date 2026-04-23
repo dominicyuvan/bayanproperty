@@ -21,7 +21,6 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth-context'
-import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -48,18 +47,14 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const t = useTranslations('nav')
   const tCommon = useTranslations('common')
   const { signOut } = useAuth()
-  const { direction } = useLocale()
 
-  const CollapseIcon = direction === 'rtl' 
-    ? (collapsed ? ChevronLeft : ChevronRight)
-    : (collapsed ? ChevronRight : ChevronLeft)
+  const CollapseIcon = collapsed ? ChevronRight : ChevronLeft
 
   return (
     <aside
       className={cn(
-        'fixed top-0 z-40 flex h-screen flex-col border-e bg-sidebar transition-all duration-300',
-        direction === 'rtl' ? 'right-0' : 'left-0',
-        collapsed ? 'w-16' : 'w-64'
+        'fixed start-0 top-0 z-40 flex h-screen flex-col border-e bg-sidebar transition-all duration-300',
+        collapsed ? 'w-16' : 'w-64',
       )}
     >
       {/* Logo */}
@@ -151,10 +146,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         variant="ghost"
         size="icon"
         onClick={onToggle}
-        className={cn(
-          'absolute top-1/2 -translate-y-1/2 h-6 w-6 rounded-full border bg-background shadow-sm',
-          direction === 'rtl' ? '-left-3' : '-right-3'
-        )}
+        className="absolute end-0 top-1/2 h-6 w-6 translate-x-1/2 -translate-y-1/2 rounded-full border bg-background shadow-sm"
       >
         <CollapseIcon className="h-4 w-4" />
       </Button>

@@ -8,22 +8,12 @@ export function normalizeOmanPhone(phone: string): string {
   return `+968${digits}`
 }
 
-export async function saveUserLanguagePreference(uid: string, languagePreference: 'en' | 'ar'): Promise<void> {
-  if (!db) throw new Error('Firestore not initialized')
-  await setDoc(
-    doc(db, 'users', uid),
-    { languagePreference, updatedAt: serverTimestamp() },
-    { merge: true },
-  )
-}
-
 export async function saveUserProfileFields(
   uid: string,
   fields: {
     nameEn: string
     nameAr: string
     phone: string
-    languagePreference?: 'en' | 'ar'
   },
 ): Promise<void> {
   if (!db) throw new Error('Firestore not initialized')
@@ -33,7 +23,7 @@ export async function saveUserProfileFields(
       nameEn: fields.nameEn.trim(),
       nameAr: fields.nameAr.trim(),
       phone: normalizeOmanPhone(fields.phone),
-      ...(fields.languagePreference ? { languagePreference: fields.languagePreference } : {}),
+      languagePreference: 'en',
       updatedAt: serverTimestamp(),
     },
     { merge: true },

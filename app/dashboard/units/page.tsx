@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Search, Home, MoreHorizontal, Pencil, Trash2, Eye, User, Bed, Bath, Square } from 'lucide-react'
-import { useLocale } from '@/contexts/locale-context'
+import { Plus, Search, Home, MoreHorizontal, Pencil, Trash2, Eye, User, Bed, Bath, Square, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -67,7 +66,6 @@ const statusStyles: Record<UnitStatus, { variant: 'default' | 'secondary' | 'des
 export default function UnitsPage() {
   const t = useTranslations('units')
   const tCommon = useTranslations('common')
-  const { locale } = useLocale()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
@@ -75,7 +73,9 @@ export default function UnitsPage() {
   useOpenAddDialogFromQuery(setIsAddDialogOpen)
 
   const filteredUnits = demoUnits.filter((unit) => {
-    const matchesSearch = unit.unitNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    const q = searchQuery.toLowerCase()
+    const matchesSearch =
+      unit.unitNumber.toLowerCase().includes(q) || String(unit.floor).includes(q)
     const matchesStatus = statusFilter === 'all' || unit.status === statusFilter
     const matchesType = typeFilter === 'all' || unit.type === typeFilter
     return matchesSearch && matchesStatus && matchesType
@@ -168,8 +168,8 @@ export default function UnitsPage() {
           </TableHeader>
           <TableBody>
             {filteredUnits.map((unit) => {
-              const propertyName = locale === 'ar' ? unit.propertyNameAr : unit.propertyNameEn
-              const tenantName = locale === 'ar' ? unit.tenantNameAr : unit.tenantNameEn
+              const propertyName = unit.propertyNameEn
+              const tenantName = unit.tenantNameEn
               const style = statusStyles[unit.status]
 
               return (
@@ -192,6 +192,10 @@ export default function UnitsPage() {
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Layers className="h-3 w-3" />
+                        {t('floorShort', { floor: unit.floor })}
+                      </span>
                       {unit.bedrooms > 0 && (
                         <span className="flex items-center gap-1">
                           <Bed className="h-3 w-3" />

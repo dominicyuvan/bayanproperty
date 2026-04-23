@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Search, UserCircle, MoreHorizontal, Pencil, Trash2, Eye, Mail, Phone, Building2, Home } from 'lucide-react'
-import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -44,15 +43,15 @@ const owners: OwnerRow[] = []
 export default function OwnersPage() {
   const t = useTranslations('owners')
   const tCommon = useTranslations('common')
-  const { locale } = useLocale()
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
   const filtered = owners.filter((row) => {
-    const name = (locale === 'ar' ? row.nameAr : row.nameEn).toLowerCase()
+    const name = row.nameEn.toLowerCase()
     const q = searchQuery.toLowerCase()
     return (
       name.includes(q) ||
+      row.nameAr.toLowerCase().includes(q) ||
       row.email.toLowerCase().includes(q) ||
       row.phone.toLowerCase().includes(q) ||
       String(row.propertyCount).includes(q) ||
@@ -80,9 +79,7 @@ export default function OwnersPage() {
             <DialogHeader>
               <DialogTitle>{t('addOwner')}</DialogTitle>
               <DialogDescription>
-                {locale === 'ar'
-                  ? 'سيتم ربط إضافة الملاك بقاعدة البيانات قريباً. يمكن للملاك التسجيل من صفحة إنشاء الحساب.'
-                  : 'Adding owners from here will connect to your database soon. Owners can also sign up via Register.'}
+                Adding owners from here will connect to your database soon. Owners can also sign up via Register.
               </DialogDescription>
             </DialogHeader>
             <Button className="w-full" onClick={() => setIsAddDialogOpen(false)}>
@@ -126,7 +123,7 @@ export default function OwnersPage() {
           </TableHeader>
           <TableBody>
             {filtered.map((row) => {
-              const name = locale === 'ar' ? row.nameAr : row.nameEn
+              const name = row.nameEn
 
               return (
                 <TableRow key={row.id}>
@@ -185,10 +182,10 @@ export default function OwnersPage() {
           <div className="flex flex-col items-center justify-center border-t py-12 text-center">
             <UserCircle className="mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="text-lg font-medium">
-              {locale === 'ar' ? 'لا يوجد ملاك' : 'No owners found'}
+              No owners found
             </h3>
             <p className="text-muted-foreground">
-              {locale === 'ar' ? 'جرّب تعديل البحث' : 'Try adjusting your search'}
+              Try adjusting your search
             </p>
           </div>
         )}

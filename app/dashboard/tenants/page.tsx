@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Search, Users, MoreHorizontal, Pencil, Trash2, Eye, Mail, Phone } from 'lucide-react'
 import { toast } from 'sonner'
-import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -45,7 +44,6 @@ export default function TenantsPage() {
   const t = useTranslations('tenants')
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
-  const { locale } = useLocale()
   const [tenants, setTenants] = useState<TenantRecord[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -78,10 +76,11 @@ export default function TenantsPage() {
   }, [tErrors])
 
   const filtered = tenants.filter((row) => {
-    const name = (locale === 'ar' ? row.nameAr : row.nameEn).toLowerCase()
+    const name = row.nameEn.toLowerCase()
     const q = searchQuery.toLowerCase()
     return (
       name.includes(q) ||
+      row.nameAr.toLowerCase().includes(q) ||
       row.email.toLowerCase().includes(q) ||
       row.phone.toLowerCase().includes(q) ||
       row.unitNumber.toLowerCase().includes(q)
@@ -144,7 +143,7 @@ export default function TenantsPage() {
           </TableHeader>
           <TableBody>
             {filtered.map((row) => {
-              const name = locale === 'ar' ? row.nameAr : row.nameEn
+              const name = row.nameEn
               const lease = leaseBadge[row.leaseStatus]
 
               return (
@@ -210,10 +209,10 @@ export default function TenantsPage() {
           <div className="flex flex-col items-center justify-center border-t py-12 text-center">
             <Users className="mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="text-lg font-medium">
-              {locale === 'ar' ? 'لا يوجد مستأجرون' : 'No tenants found'}
+              No tenants found
             </h3>
             <p className="text-muted-foreground">
-              {locale === 'ar' ? 'جرّب تعديل البحث' : 'Try adjusting your search'}
+              Try adjusting your search
             </p>
           </div>
         )}

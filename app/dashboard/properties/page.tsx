@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Plus, Search, Building2, MapPin, MoreHorizontal, Pencil, Trash2, Eye, Home } from 'lucide-react'
-import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -53,7 +52,6 @@ export default function PropertiesPage() {
   const tProps = t as (key: string) => string
   const muscatCityLabel = (governorate: string, city: string) =>
     governorate === 'Muscat' && MUSCAT_DISTRICT_SET.has(city) ? tProps(`muscatDistricts.${city}`) : city
-  const { locale } = useLocale()
   const [properties, setProperties] = useState<Property[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [governorateFilter, setGovernorateFilter] = useState<string>('all')
@@ -88,13 +86,15 @@ export default function PropertiesPage() {
   }, [tErrors])
 
   const filteredProperties = properties.filter((property) => {
-    const name = locale === 'ar' ? property.nameAr : property.nameEn
-    const address = locale === 'ar' ? property.addressAr : property.addressEn
+    const name = property.nameEn
+    const address = property.addressEn
     const cityDisplay = muscatCityLabel(property.governorate, property.city)
     const q = searchQuery.toLowerCase()
     const matchesSearch =
       name.toLowerCase().includes(q) ||
+      property.nameAr.toLowerCase().includes(q) ||
       address.toLowerCase().includes(q) ||
+      property.addressAr.toLowerCase().includes(q) ||
       property.city.toLowerCase().includes(q) ||
       cityDisplay.toLowerCase().includes(q) ||
       (property.code?.toLowerCase().includes(q) ?? false) ||
@@ -196,8 +196,8 @@ export default function PropertiesPage() {
           </TableHeader>
           <TableBody>
             {filteredProperties.map((property) => {
-              const name = locale === 'ar' ? property.nameAr : property.nameEn
-              const addressLine = locale === 'ar' ? property.addressAr : property.addressEn
+              const name = property.nameEn
+              const addressLine = property.addressEn
               const cityLabel = muscatCityLabel(property.governorate, property.city)
               const occupied = property.occupiedUnits ?? 0
               const total = Math.max(1, property.totalUnits)
@@ -290,10 +290,10 @@ export default function PropertiesPage() {
           <div className="flex flex-col items-center justify-center border-t py-12 text-center">
             <Home className="mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="text-lg font-medium">
-              {locale === 'ar' ? 'لا توجد عقارات' : 'No properties found'}
+              No properties found
             </h3>
             <p className="text-muted-foreground">
-              {locale === 'ar' ? 'جرّب تعديل البحث أو المرشحات' : 'Try adjusting your search or filters'}
+              Try adjusting your search or filters
             </p>
           </div>
         )}

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Search, Building, Users, DollarSign, MoreHorizontal, Pencil, Trash2, Eye, Mail, Phone } from 'lucide-react'
-import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,13 +41,15 @@ const demoAssociations: Array<{
 export default function AssociationsPage() {
   const t = useTranslations('associations')
   const tCommon = useTranslations('common')
-  const { locale } = useLocale()
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
   const filteredAssociations = demoAssociations.filter((association) => {
-    const name = locale === 'ar' ? association.nameAr : association.nameEn
-    return name.toLowerCase().includes(searchQuery.toLowerCase())
+    const q = searchQuery.toLowerCase()
+    return (
+      association.nameEn.toLowerCase().includes(q) ||
+      association.nameAr.toLowerCase().includes(q)
+    )
   })
 
   return (
@@ -94,8 +95,8 @@ export default function AssociationsPage() {
       {/* Associations Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredAssociations.map((association) => {
-          const name = locale === 'ar' ? association.nameAr : association.nameEn
-          const chairperson = locale === 'ar' ? association.chairpersonNameAr : association.chairpersonNameEn
+          const name = association.nameEn
+          const chairperson = association.chairpersonNameEn
           const initials = chairperson.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 
           return (

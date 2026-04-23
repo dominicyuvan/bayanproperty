@@ -13,7 +13,6 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
-import { useLocale } from '@/contexts/locale-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -47,9 +46,8 @@ export function DashboardContent() {
   const tTenants = useTranslations('tenants')
   const tPayments = useTranslations('payments')
   const { user } = useAuth()
-  const { locale } = useLocale()
 
-  const displayName = locale === 'ar' ? user?.nameAr : user?.nameEn
+  const displayName = user?.nameEn?.trim() || user?.nameAr?.trim() || ''
 
   const occupancyRate =
     stats.totalUnits > 0 ? Math.round((stats.occupiedUnits / stats.totalUnits) * 100) : 0
@@ -224,7 +222,7 @@ export function DashboardContent() {
                   </div>
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {locale === 'ar' ? activity.titleAr : activity.titleEn}
+                      {activity.titleEn}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Badge variant="secondary" className="text-xs">
@@ -238,7 +236,7 @@ export function DashboardContent() {
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
+                    {new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
                       Math.round((activity.date.getTime() - Date.now()) / 3600000),
                       'hour'
                     )}
