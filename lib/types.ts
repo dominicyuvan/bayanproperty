@@ -124,6 +124,19 @@ export interface TenantRecord {
   updatedAt: Date
 }
 
+/** Owner roster entry (dashboard-managed) */
+export interface OwnerRecord {
+  id: string
+  nameEn: string
+  nameAr: string
+  email: string
+  phone: string
+  propertyCount: number
+  unitCount: number
+  createdAt: Date
+  updatedAt: Date
+}
+
 // Property
 export interface Property {
   id: string

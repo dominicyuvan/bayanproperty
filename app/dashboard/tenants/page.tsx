@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Search, Users, MoreHorizontal, Pencil, Trash2, Eye, Mail, Phone } from 'lucide-react'
+import { Plus, Search, Users, MoreHorizontal, Pencil, Trash2, Eye, Mail, Phone, FileStack } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +30,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { TenantForm } from '@/components/tenants/tenant-form'
+import { RosterDocumentsPanel } from '@/components/roster/roster-documents-panel'
 import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
 import { subscribeTenantRecords } from '@/lib/tenants-db'
 import type { TenantLeaseStatus, TenantRecord } from '@/lib/types'
@@ -48,6 +49,7 @@ export default function TenantsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [tenantFormKey, setTenantFormKey] = useState(0)
+  const [documentsTenantId, setDocumentsTenantId] = useState<string | null>(null)
   const listErrorShown = useRef(false)
 
   useOpenAddDialogFromQuery(setIsAddDialogOpen, () => setTenantFormKey((k) => k + 1))
@@ -119,6 +121,18 @@ export default function TenantsPage() {
         </Dialog>
       </div>
 
+      <Dialog open={documentsTenantId !== null} onOpenChange={(open) => !open && setDocumentsTenantId(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t('documentsDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('documentsDialogDescription')}</DialogDescription>
+          </DialogHeader>
+          {documentsTenantId ? (
+            <RosterDocumentsPanel entity="tenants" entityId={documentsTenantId} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
       <div className="relative max-w-md">
         <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -184,6 +198,10 @@ export default function TenantsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setDocumentsTenantId(row.id)}>
+                          <FileStack className="me-2 h-4 w-4" />
+                          {t('openDocuments')}
+                        </DropdownMenuItem>
                         <DropdownMenuItem>
                           <Eye className="me-2 h-4 w-4" />
                           {tCommon('view')}

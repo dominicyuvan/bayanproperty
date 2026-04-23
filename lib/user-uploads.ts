@@ -65,6 +65,7 @@ export function assertKycFile(file: File) {
   }
 }
 
+/** Maps a Firestore `uploads` subdocument (user, tenant, or owner). */
 export function mapUploadDoc(id: string, data: Record<string, unknown>): UserUploadRecord {
   const cat = String(data.category ?? 'other')
   const categories: UserUploadCategory[] = [

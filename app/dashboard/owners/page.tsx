@@ -1,8 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Search, UserCircle, MoreHorizontal, Pencil, Trash2, Eye, Mail, Phone, Building2, Home } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  UserCircle,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Eye,
+  Mail,
+  Phone,
+  Building2,
+  Home,
+  FileStack,
+} from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -27,24 +41,44 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-
-type OwnerRow = {
-  id: string
-  nameEn: string
-  nameAr: string
-  email: string
-  phone: string
-  propertyCount: number
-  unitCount: number
-}
-
-const owners: OwnerRow[] = []
+import { OwnerForm } from '@/components/owners/owner-form'
+import { RosterDocumentsPanel } from '@/components/roster/roster-documents-panel'
+import { subscribeOwnerRecords } from '@/lib/owners-db'
+import type { OwnerRecord } from '@/lib/types'
 
 export default function OwnersPage() {
   const t = useTranslations('owners')
   const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
+  const [owners, setOwners] = useState<OwnerRecord[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [ownerFormKey, setOwnerFormKey] = useState(0)
+  const [documentsOwnerId, setDocumentsOwnerId] = useState<string | null>(null)
+  const listErrorShown = useRef(false)
+
+  useEffect(() => {
+    listErrorShown.current = false
+    const unsubscribe = subscribeOwnerRecords(
+      (rows) => setOwners(rows),
+      (err) => {
+        console.error(err)
+        if (!listErrorShown.current) {
+          listErrorShown.current = true
+          const code =
+            err && typeof err === 'object' && 'code' in err
+              ? String((err as { code: string }).code)
+              : ''
+          if (code === 'permission-denied') {
+            toast.error(tErrors('firestorePermissionDenied'))
+          } else {
+            toast.error(tErrors('somethingWentWrong'))
+          }
+        }
+      },
+    )
+    return () => unsubscribe()
+  }, [tErrors])
 
   const filtered = owners.filter((row) => {
     const name = row.nameEn.toLowerCase()
@@ -68,26 +102,40 @@ export default function OwnersPage() {
             {owners.length} {t('title').toLowerCase()}
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog
+          open={isAddDialogOpen}
+          onOpenChange={(open) => {
+            setIsAddDialogOpen(open)
+            if (open) setOwnerFormKey((k) => k + 1)
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="me-2 h-4 w-4" />
               {t('addOwner')}
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{t('addOwner')}</DialogTitle>
-              <DialogDescription>
-                Adding owners from here will connect to your database soon. Owners can also sign up via Register.
-              </DialogDescription>
+              <DialogDescription>{t('addOwnerDescription')}</DialogDescription>
             </DialogHeader>
-            <Button className="w-full" onClick={() => setIsAddDialogOpen(false)}>
-              {tCommon('close')}
-            </Button>
+            <OwnerForm key={ownerFormKey} onSuccess={() => setIsAddDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={documentsOwnerId !== null} onOpenChange={(open) => !open && setDocumentsOwnerId(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t('documentsDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('documentsDialogDescription')}</DialogDescription>
+          </DialogHeader>
+          {documentsOwnerId ? (
+            <RosterDocumentsPanel entity="owners" entityId={documentsOwnerId} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <div className="relative max-w-md">
         <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -157,6 +205,10 @@ export default function OwnersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setDocumentsOwnerId(row.id)}>
+                          <FileStack className="me-2 h-4 w-4" />
+                          {t('openDocuments')}
+                        </DropdownMenuItem>
                         <DropdownMenuItem>
                           <Eye className="me-2 h-4 w-4" />
                           {tCommon('view')}
@@ -181,12 +233,8 @@ export default function OwnersPage() {
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center border-t py-12 text-center">
             <UserCircle className="mb-4 h-12 w-12 text-muted-foreground" />
-            <h3 className="text-lg font-medium">
-              No owners found
-            </h3>
-            <p className="text-muted-foreground">
-              Try adjusting your search
-            </p>
+            <h3 className="text-lg font-medium">No owners found</h3>
+            <p className="text-muted-foreground">Try adjusting your search or add an owner</p>
           </div>
         )}
       </div>
