@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "مدير العقارات عُمان",
+    "appName": "بيان لإدارة العقارات",
     "loading": "جاري التحميل...",
     "save": "حفظ",
     "cancel": "إلغاء",
@@ -138,7 +138,20 @@
     "tenantDetails": "تفاصيل المستأجر",
     "currentUnit": "الوحدة الحالية",
     "leaseStatus": "حالة العقد",
-    "paymentHistory": "سجل المدفوعات"
+    "paymentHistory": "سجل المدفوعات",
+    "lease": {
+      "active": "ساري",
+      "expired": "منتهي",
+      "pending": "معلق"
+    }
+  },
+  "owners": {
+    "title": "الملاك",
+    "addOwner": "إضافة مالك",
+    "editOwner": "تعديل المالك",
+    "ownerDetails": "تفاصيل المالك",
+    "propertyCount": "العقارات",
+    "unitCount": "الوحدات"
   },
   "associations": {
     "title": "جمعيات الملاك",

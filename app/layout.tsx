@@ -15,8 +15,9 @@ const tajawal = Tajawal({
 })
 
 export const metadata: Metadata = {
-  title: 'Oman Property Manager',
-  description: 'Property management system for Oman - نظام إدارة العقارات في عُمان',
+  title: 'Bayan Property Management',
+  description: 'Bayan Property Management — property operations for Oman',
+  applicationName: 'Bayan Property Management',
   generator: 'v0.app',
   icons: {
     icon: [

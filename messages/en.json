@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Oman Property Manager",
+    "appName": "Bayan Property Management",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -138,7 +138,20 @@
     "tenantDetails": "Tenant Details",
     "currentUnit": "Current Unit",
     "leaseStatus": "Lease Status",
-    "paymentHistory": "Payment History"
+    "paymentHistory": "Payment History",
+    "lease": {
+      "active": "Active",
+      "expired": "Expired",
+      "pending": "Pending"
+    }
+  },
+  "owners": {
+    "title": "Owners",
+    "addOwner": "Add Owner",
+    "editOwner": "Edit Owner",
+    "ownerDetails": "Owner Details",
+    "propertyCount": "Properties",
+    "unitCount": "Units"
   },
   "associations": {
     "title": "Owner's Associations",
