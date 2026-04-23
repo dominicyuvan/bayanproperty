@@ -150,18 +150,20 @@ export default function UnitsPage() {
       </div>
 
       {/* Units Table */}
-      <div className="rounded-lg border bg-card">
+      <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>{t('unitNumber')}</TableHead>
-              <TableHead className="hidden md:table-cell">Property</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[7rem]">{t('unitNumber')}</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[8rem] max-w-[12rem]">
+                {t('linkedProperty')}
+              </TableHead>
               <TableHead>{t('unitType')}</TableHead>
-              <TableHead className="hidden lg:table-cell">Details</TableHead>
-              <TableHead>{t('monthlyRent')}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t('specSummary')}</TableHead>
+              <TableHead className="text-end">{t('monthlyRent')}</TableHead>
               <TableHead>{tCommon('status')}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t('tenant')}</TableHead>
-              <TableHead className="w-12"></TableHead>
+              <TableHead className="hidden lg:table-cell min-w-[7rem] max-w-[11rem]">{t('tenant')}</TableHead>
+              <TableHead className="w-12 text-end" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -174,22 +176,22 @@ export default function UnitsPage() {
                 <TableRow key={unit.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted">
                         <Home className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <span className="font-medium">{unit.unitNumber}</span>
+                      <span className="truncate font-medium tabular-nums">{unit.unitNumber}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <span className="text-muted-foreground">{propertyName}</span>
+                  <TableCell className="hidden md:table-cell min-w-0 max-w-[12rem]">
+                    <span className="block truncate text-muted-foreground">{propertyName}</span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="max-w-full whitespace-normal text-xs font-normal">
                       {t(`types.${unit.type}`)}
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       {unit.bedrooms > 0 && (
                         <span className="flex items-center gap-1">
                           <Bed className="h-3 w-3" />
@@ -206,25 +208,25 @@ export default function UnitsPage() {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-end tabular-nums">
                     <span className="font-medium">{formatOMR(unit.monthlyRent)}</span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={style.variant} className={style.className}>
+                    <Badge variant={style.variant} className={`whitespace-nowrap ${style.className}`}>
                       {t(`status.${unit.status}`)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">
+                  <TableCell className="hidden lg:table-cell min-w-0 max-w-[11rem]">
                     {tenantName ? (
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{tenantName}</span>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-sm">{tenantName}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">-</span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="w-12 text-end">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -254,7 +256,7 @@ export default function UnitsPage() {
         </Table>
 
         {filteredUnits.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="flex flex-col items-center justify-center border-t py-12 text-center">
             <Home className="mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="text-lg font-medium">No units found</h3>
             <p className="text-muted-foreground">Try adjusting your search or filters</p>

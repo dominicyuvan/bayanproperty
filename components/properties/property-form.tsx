@@ -21,6 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
+import { useAuth } from '@/contexts/auth-context'
+import { db, isFirebaseConfigured } from '@/lib/firebase'
+import { createPropertyRecord } from '@/lib/properties-db'
 import { OMAN_GOVERNORATES, PROPERTY_TYPES, type OmanGovernorate } from '@/lib/types'
 import { generatePropertyCode } from '@/lib/property-code'
 import { useEnToArAutofill } from '@/hooks/use-en-to-ar-autofill'
@@ -52,6 +55,7 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
   const tForms = useTranslations('forms')
   const tGov = useTranslations('governorates')
   const tErrors = useTranslations('errors')
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [autoAr, setAutoAr] = useState(true)
 
@@ -94,14 +98,49 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
   const translating = nameTranslating || addressTranslating
 
   const onSubmit = async (data: PropertyFormData) => {
+    if (!user) {
+      toast.error(tErrors('unauthorized'))
+      return
+    }
+    if (!isFirebaseConfigured || !db) {
+      toast.error(tErrors('databaseUnavailable'))
+      return
+    }
+
     setIsLoading(true)
     try {
-      // TODO: Save to Firebase
-      console.log('Property data:', data)
-      toast.success('Property saved successfully')
+      const amenities =
+        data.amenities
+          ?.split(',')
+          .map((s) => s.trim())
+          .filter(Boolean) ?? []
+      const plot = data.plotNumber?.trim()
+      await createPropertyRecord({
+        code: data.code,
+        ...(plot ? { plotNumber: plot } : {}),
+        nameEn: data.nameEn,
+        nameAr: data.nameAr,
+        type: data.type,
+        governorate: data.governorate as OmanGovernorate,
+        city: data.city,
+        addressEn: data.addressEn,
+        addressAr: data.addressAr,
+        totalUnits: data.totalUnits,
+        amenities,
+      })
+      toast.success(t('propertySaved'))
       onSuccess?.()
-    } catch (error) {
-      toast.error(tErrors('somethingWentWrong'))
+    } catch (error: unknown) {
+      console.error(error)
+      const code =
+        error && typeof error === 'object' && 'code' in error
+          ? String((error as { code: string }).code)
+          : ''
+      if (code === 'permission-denied') {
+        toast.error(tErrors('firestorePermissionDenied'))
+      } else {
+        toast.error(tErrors('somethingWentWrong'))
+      }
     } finally {
       setIsLoading(false)
     }

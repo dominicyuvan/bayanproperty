@@ -89,6 +89,11 @@
   "properties": {
     "title": "Properties",
     "addProperty": "Add Property",
+    "addPropertyDescription": "Saves to your Firestore database. Ensure security rules allow authenticated access to the properties collection.",
+    "propertySaved": "Property saved successfully",
+    "occupancy": "Occupancy",
+    "occupiedShort": "Occupied",
+    "vacantShort": "Vacant",
     "editProperty": "Edit Property",
     "propertyDetails": "Property Details",
     "propertyName": "Property Name",
@@ -110,6 +115,8 @@
   },
   "units": {
     "title": "Units",
+    "linkedProperty": "Property",
+    "specSummary": "Layout",
     "addUnit": "Add Unit",
     "editUnit": "Edit Unit",
     "unitDetails": "Unit Details",
@@ -182,6 +189,8 @@
   },
   "payments": {
     "title": "Payments",
+    "unit": "Unit",
+    "tenant": "Tenant",
     "addPayment": "Record Payment",
     "paymentDetails": "Payment Details",
     "dueDate": "Due Date",
@@ -263,11 +272,46 @@
   },
   "settings": {
     "title": "Settings",
+    "subtitle": "Manage your profile, documents, language, and security.",
     "language": "Language",
     "theme": "Theme",
-    "profile": "Profile Settings",
+    "profile": "Profile",
+    "profileDescription": "Update your display name, phone, and profile photo.",
+    "profileSaved": "Profile saved",
+    "photoUpdated": "Profile photo updated",
+    "changePhoto": "Change photo",
+    "photoHint": "JPEG, PNG, or WebP. Maximum {maxMb} MB.",
+    "emailReadOnlyHint": "Email is tied to your login. Contact support if you need to change it.",
+    "documentsTitle": "Documents",
+    "documentsDescription": "Upload ID and agreements for verification. Files are stored securely in your account.",
+    "documentsAcceptHint": "Accepted: PDF or images (JPEG, PNG, WebP). Maximum 10 MB per file.",
+    "documentCategory": "Document type",
+    "uploadDocument": "Upload file",
+    "documentUploaded": "Document uploaded",
+    "documentRemoved": "Document removed",
+    "noDocumentsYet": "No documents uploaded yet.",
+    "fileName": "File",
+    "fileSize": "Size",
+    "openFile": "Open",
+    "deleteDocumentTitle": "Remove this file?",
+    "deleteDocumentDescription": "This deletes the file from storage. You can upload a replacement afterwards.",
+    "languageDescription": "Choose interface language and text direction.",
+    "languageUiHint": "Arabic uses right-to-left layout where supported.",
     "security": "Security",
-    "notifications": "Notifications"
+    "securityDescription": "Change your password. You must enter your current password first.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "updatePassword": "Update password",
+    "passwordUpdated": "Password updated",
+    "wrongCurrentPassword": "Current password is incorrect.",
+    "notifications": "Notifications",
+    "docCategory": {
+      "national_id": "National ID / civil ID",
+      "residence_visa": "Visa or residence permit",
+      "lease_agreement": "Lease or tenancy agreement",
+      "proof_of_address": "Proof of address",
+      "other": "Other"
+    }
   },
   "governorates": {
     "Muscat": "Muscat",
@@ -293,6 +337,8 @@
     "notFound": "Not found",
     "unauthorized": "Unauthorized",
     "databaseUnavailable": "Database is not available. Check Firebase configuration.",
-    "firestorePermissionDenied": "You do not have permission to save this data. In Firebase Console, add Firestore rules for the \"tenants\" collection for signed-in users."
+    "firestorePermissionDenied": "You do not have permission to save this data. In Firebase Console, allow your signed-in user to read/write the relevant collections (e.g. users, uploads, tenants, properties).",
+    "fileTooLarge": "File is too large (max {maxMb} MB).",
+    "invalidFileType": "This file type is not allowed."
   }
 }

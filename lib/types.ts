@@ -82,8 +82,29 @@ export interface User {
   role: UserRole
   languagePreference: 'en' | 'ar'
   avatarUrl?: string
+  /** Firebase Storage path for the current profile photo (used to delete old file on replace) */
+  avatarStoragePath?: string
   createdAt: Date
   updatedAt: Date
+}
+
+/** KYC / contract file stored under `users/{uid}/uploads` */
+export type UserUploadCategory =
+  | 'national_id'
+  | 'residence_visa'
+  | 'lease_agreement'
+  | 'proof_of_address'
+  | 'other'
+
+export interface UserUploadRecord {
+  id: string
+  category: UserUploadCategory
+  originalFileName: string
+  storagePath: string
+  downloadUrl: string
+  mimeType: string
+  sizeBytes: number
+  createdAt: Date
 }
 
 /** Lease roster entry (dashboard-managed; optional `userId` when linked to Auth) */
@@ -118,6 +139,8 @@ export interface Property {
   addressEn: string
   addressAr: string
   totalUnits: number
+  /** Denormalized occupied count; updated when units are linked */
+  occupiedUnits?: number
   managerId?: string
   associationId?: string
   images: string[]

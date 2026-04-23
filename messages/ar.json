@@ -89,6 +89,11 @@
   "properties": {
     "title": "العقارات",
     "addProperty": "إضافة عقار",
+    "addPropertyDescription": "يُحفظ في Firestore. تأكد من قواعد الأمان للمجموعة properties للمستخدمين المسجلين.",
+    "propertySaved": "تم حفظ العقار بنجاح",
+    "occupancy": "الإشغال",
+    "occupiedShort": "مشغول",
+    "vacantShort": "شاغر",
     "editProperty": "تعديل العقار",
     "propertyDetails": "تفاصيل العقار",
     "propertyName": "اسم العقار",
@@ -110,6 +115,8 @@
   },
   "units": {
     "title": "الوحدات",
+    "linkedProperty": "العقار",
+    "specSummary": "التفاصيل",
     "addUnit": "إضافة وحدة",
     "editUnit": "تعديل الوحدة",
     "unitDetails": "تفاصيل الوحدة",
@@ -182,6 +189,8 @@
   },
   "payments": {
     "title": "المدفوعات",
+    "unit": "الوحدة",
+    "tenant": "المستأجر",
     "addPayment": "تسجيل دفعة",
     "paymentDetails": "تفاصيل الدفعة",
     "dueDate": "تاريخ الاستحقاق",
@@ -263,11 +272,46 @@
   },
   "settings": {
     "title": "الإعدادات",
+    "subtitle": "إدارة الملف الشخصي والمستندات واللغة والأمان.",
     "language": "اللغة",
     "theme": "المظهر",
-    "profile": "إعدادات الملف الشخصي",
+    "profile": "الملف الشخصي",
+    "profileDescription": "تحديث الاسم المعروض والهاتف وصورة الملف الشخصي.",
+    "profileSaved": "تم حفظ الملف الشخصي",
+    "photoUpdated": "تم تحديث الصورة",
+    "changePhoto": "تغيير الصورة",
+    "photoHint": "JPEG أو PNG أو WebP. الحد الأقصى {maxMb} ميجابايت.",
+    "emailReadOnlyHint": "البريد مرتبط بتسجيل الدخول. تواصل مع الدعم لتغييره.",
+    "documentsTitle": "المستندات",
+    "documentsDescription": "ارفع الهوية والعقود للتحقق. تُخزّن الملفات بشكل آمن في حسابك.",
+    "documentsAcceptHint": "المقبول: PDF أو صور (JPEG أو PNG أو WebP). حتى 10 ميجابايت لكل ملف.",
+    "documentCategory": "نوع المستند",
+    "uploadDocument": "رفع ملف",
+    "documentUploaded": "تم رفع المستند",
+    "documentRemoved": "تم حذف المستند",
+    "noDocumentsYet": "لا توجد مستندات مرفوعة بعد.",
+    "fileName": "الملف",
+    "fileSize": "الحجم",
+    "openFile": "فتح",
+    "deleteDocumentTitle": "حذف هذا الملف؟",
+    "deleteDocumentDescription": "سيُحذف الملف من التخزين. يمكنك رفع ملف بديل لاحقاً.",
+    "languageDescription": "اختر لغة الواجهة واتجاه النص.",
+    "languageUiHint": "العربية تستخدم تخطيطاً من اليمين إلى اليسار حيثما كان ذلك مدعوماً.",
     "security": "الأمان",
-    "notifications": "الإشعارات"
+    "securityDescription": "تغيير كلمة المرور. يجب إدخال كلمة المرور الحالية أولاً.",
+    "currentPassword": "كلمة المرور الحالية",
+    "newPassword": "كلمة المرور الجديدة",
+    "updatePassword": "تحديث كلمة المرور",
+    "passwordUpdated": "تم تحديث كلمة المرور",
+    "wrongCurrentPassword": "كلمة المرور الحالية غير صحيحة.",
+    "notifications": "الإشعارات",
+    "docCategory": {
+      "national_id": "البطاقة الشخصية / الهوية المدنية",
+      "residence_visa": "التأشيرة أو تصريح الإقامة",
+      "lease_agreement": "عقد الإيجار أو التأجير",
+      "proof_of_address": "إثبات العنوان",
+      "other": "أخرى"
+    }
   },
   "governorates": {
     "Muscat": "مسقط",
@@ -293,6 +337,8 @@
     "notFound": "غير موجود",
     "unauthorized": "غير مصرح",
     "databaseUnavailable": "قاعدة البيانات غير متاحة. تحقق من إعدادات Firebase.",
-    "firestorePermissionDenied": "ليس لديك صلاحية لحفظ هذه البيانات. في Firebase Console أضف قواعد Firestore لمجموعة \"tenants\" للمستخدمين المسجلين."
+    "firestorePermissionDenied": "ليس لديك صلاحية لحفظ هذه البيانات. في Firebase Console اسمح للمستخدم المسجل بالقراءة/الكتابة للمجموعات المناسبة (مثل users والمرفوعات uploads والعقارات).",
+    "fileTooLarge": "الملف كبير جداً (الحد الأقصى {maxMb} ميجابايت).",
+    "invalidFileType": "نوع الملف غير مسموح."
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
+import { deserializeUser } from '@/lib/user-doc'
 import type { User, UserRole } from '@/lib/types'
 
 interface AuthContextType {
@@ -23,6 +24,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, userData: Partial<User>) => Promise<void>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
+  /** Reload `users/{uid}` from Firestore into context (e.g. after profile or avatar update). */
+  refreshUserProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -71,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const userDoc = await getDoc(doc(db, 'users', fbUser.uid))
           if (userDoc.exists()) {
-            setUser({ id: fbUser.uid, ...userDoc.data() } as User)
+            setUser(deserializeUser(fbUser.uid, userDoc.data() as Record<string, unknown>))
           } else {
             // Backfill a profile for users that exist in Auth but not in Firestore.
             const fallbackUser: Omit<User, 'id'> = {
@@ -144,6 +147,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
+  const refreshUserProfile = useCallback(async () => {
+    const fb = auth?.currentUser
+    if (!fb || !db) return
+    try {
+      const userDoc = await getDoc(doc(db, 'users', fb.uid))
+      if (userDoc.exists()) {
+        setUser(deserializeUser(fb.uid, userDoc.data() as Record<string, unknown>))
+      }
+    } catch (e) {
+      console.error('refreshUserProfile', e)
+    }
+  }, [])
+
   const resetPassword = async (email: string) => {
     if (!auth) throw new Error('Firebase not configured')
     await sendPasswordResetEmail(auth, email)
@@ -161,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signOut,
         resetPassword,
+        refreshUserProfile,
       }}
     >
       {children}

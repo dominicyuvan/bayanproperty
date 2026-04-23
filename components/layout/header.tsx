@@ -1,7 +1,9 @@
 'use client'
 
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Bell, Globe, Menu, Search } from 'lucide-react'
+import { Bell, Globe, LogOut, Menu, Search } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useLocale } from '@/contexts/locale-context'
 import { localeNames } from '@/i18n/config'
@@ -11,6 +13,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -23,7 +26,9 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const t = useTranslations('common')
   const tNav = useTranslations('nav')
-  const { user } = useAuth()
+  const tAuth = useTranslations('auth')
+  const router = useRouter()
+  const { user, signOut } = useAuth()
   const { locale, setLocale } = useLocale()
 
   const displayName = locale === 'ar' ? user?.nameAr : user?.nameEn
@@ -122,10 +127,21 @@ export function Header({ onMenuClick }: HeaderProps) {
               </div>
             </div>
             <DropdownMenuItem asChild>
-              <a href="/dashboard/settings">{tNav('profile')}</a>
+              <Link href="/dashboard/settings">{tNav('profile')}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <a href="/dashboard/settings">{tNav('settings')}</a>
+              <Link href="/dashboard/settings">{tNav('settings')}</Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={async () => {
+                await signOut()
+                router.push('/login')
+                router.refresh()
+              }}
+            >
+              <LogOut className="me-2 h-4 w-4" />
+              {tAuth('signOut')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

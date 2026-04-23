@@ -194,17 +194,17 @@ export default function PaymentsPage() {
       </div>
 
       {/* Payments Table */}
-      <div className="rounded-lg border bg-card">
+      <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Unit</TableHead>
-              <TableHead className="hidden md:table-cell">Tenant</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[7rem]">{t('unit')}</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[8rem] max-w-[12rem]">{t('tenant')}</TableHead>
               <TableHead>{tCommon('type')}</TableHead>
-              <TableHead>{tCommon('amount')}</TableHead>
-              <TableHead>{t('dueDate')}</TableHead>
+              <TableHead className="text-end">{tCommon('amount')}</TableHead>
+              <TableHead className="whitespace-nowrap">{t('dueDate')}</TableHead>
               <TableHead>{tCommon('status')}</TableHead>
-              <TableHead className="w-12"></TableHead>
+              <TableHead className="w-12 text-end" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -217,35 +217,35 @@ export default function PaymentsPage() {
                 <TableRow key={payment.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <span className="font-medium">{payment.unitNumber}</span>
+                      <span className="truncate font-medium tabular-nums">{payment.unitNumber}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <span className="text-muted-foreground">{tenantName}</span>
+                  <TableCell className="hidden md:table-cell min-w-0 max-w-[12rem]">
+                    <span className="block truncate text-muted-foreground">{tenantName}</span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="max-w-full whitespace-normal text-xs font-normal">
                       {t(`types.${payment.type}`)}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-end tabular-nums">
                     <span className="font-medium">{formatOMR(payment.amount)}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground tabular-nums">
                       {payment.dueDate.toLocaleDateString(locale === 'ar' ? 'ar-OM' : 'en-OM')}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={style.variant} className={style.className}>
+                    <Badge variant={style.variant} className={`whitespace-nowrap ${style.className}`}>
                       <StatusIcon className="me-1 h-3 w-3" />
                       {t(`status.${payment.status}`)}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="w-12 text-end">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -275,7 +275,7 @@ export default function PaymentsPage() {
         </Table>
 
         {filteredPayments.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="flex flex-col items-center justify-center border-t py-12 text-center">
             <CreditCard className="mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="text-lg font-medium">No payments found</h3>
             <p className="text-muted-foreground">Try adjusting your search or filters</p>

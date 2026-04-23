@@ -102,26 +102,26 @@ export default function OwnersPage() {
         />
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>{tCommon('name')}</TableHead>
-              <TableHead className="hidden md:table-cell">{tCommon('email')}</TableHead>
-              <TableHead className="hidden lg:table-cell">{tCommon('phone')}</TableHead>
-              <TableHead className="text-center">
-                <span className="inline-flex items-center gap-1">
-                  <Building2 className="h-3.5 w-3.5" />
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="min-w-[10rem] max-w-[14rem]">{tCommon('name')}</TableHead>
+              <TableHead className="hidden md:table-cell max-w-[14rem]">{tCommon('email')}</TableHead>
+              <TableHead className="hidden lg:table-cell w-[9rem]">{tCommon('phone')}</TableHead>
+              <TableHead className="text-center tabular-nums">
+                <span className="inline-flex items-center justify-center gap-1">
+                  <Building2 className="h-3.5 w-3.5 shrink-0" />
                   {t('propertyCount')}
                 </span>
               </TableHead>
-              <TableHead className="text-center">
-                <span className="inline-flex items-center gap-1">
-                  <Home className="h-3.5 w-3.5" />
+              <TableHead className="text-center tabular-nums">
+                <span className="inline-flex items-center justify-center gap-1">
+                  <Home className="h-3.5 w-3.5 shrink-0" />
                   {t('unitCount')}
                 </span>
               </TableHead>
-              <TableHead className="w-12"></TableHead>
+              <TableHead className="w-12 text-end" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -130,29 +130,29 @@ export default function OwnersPage() {
 
               return (
                 <TableRow key={row.id}>
-                  <TableCell>
+                  <TableCell className="min-w-0 max-w-[14rem]">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted">
                         <UserCircle className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <span className="font-medium">{name}</span>
+                      <span className="truncate font-medium">{name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <span className="flex items-center gap-1 text-muted-foreground text-sm">
+                  <TableCell className="hidden md:table-cell min-w-0 max-w-[14rem]">
+                    <span className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
                       <Mail className="h-3 w-3 shrink-0" />
-                      {row.email}
+                      <span className="truncate">{row.email}</span>
                     </span>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    <span className="flex items-center gap-1 text-muted-foreground text-sm">
+                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Phone className="h-3 w-3 shrink-0" />
-                      {row.phone}
+                      <span className="truncate">{row.phone}</span>
                     </span>
                   </TableCell>
                   <TableCell className="text-center tabular-nums">{row.propertyCount}</TableCell>
                   <TableCell className="text-center tabular-nums">{row.unitCount}</TableCell>
-                  <TableCell>
+                  <TableCell className="w-12 text-end">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -182,7 +182,7 @@ export default function OwnersPage() {
         </Table>
 
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="flex flex-col items-center justify-center border-t py-12 text-center">
             <UserCircle className="mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="text-lg font-medium">
               {locale === 'ar' ? 'لا يوجد ملاك' : 'No owners found'}

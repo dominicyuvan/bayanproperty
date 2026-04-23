@@ -1,13 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Search, Filter, Building2, MapPin, Home, MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react'
+import { toast } from 'sonner'
+import { Plus, Search, Building2, MapPin, MoreHorizontal, Pencil, Trash2, Eye, Home } from 'lucide-react'
 import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,37 +39,59 @@ import {
 } from '@/components/ui/dialog'
 import { PropertyForm } from '@/components/properties/property-form'
 import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
-import { OMAN_GOVERNORATES, type PropertyType } from '@/lib/types'
-
-const demoProperties: Array<{
-  id: string
-  nameEn: string
-  nameAr: string
-  type: PropertyType
-  governorate: (typeof OMAN_GOVERNORATES)[number]
-  city: string
-  addressEn: string
-  addressAr: string
-  totalUnits: number
-  occupiedUnits: number
-  images: string[]
-  amenities: string[]
-}> = []
+import { subscribeProperties } from '@/lib/properties-db'
+import { OMAN_GOVERNORATES, type Property } from '@/lib/types'
 
 export default function PropertiesPage() {
   const t = useTranslations('properties')
   const tCommon = useTranslations('common')
   const tGov = useTranslations('governorates')
+  const tForms = useTranslations('forms')
+  const tErrors = useTranslations('errors')
   const { locale } = useLocale()
+  const [properties, setProperties] = useState<Property[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [governorateFilter, setGovernorateFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  useOpenAddDialogFromQuery(setIsAddDialogOpen)
+  const [propertyFormKey, setPropertyFormKey] = useState(0)
+  const listErrorShown = useRef(false)
 
-  const filteredProperties = demoProperties.filter((property) => {
+  useOpenAddDialogFromQuery(setIsAddDialogOpen, () => setPropertyFormKey((k) => k + 1))
+
+  useEffect(() => {
+    listErrorShown.current = false
+    const unsubscribe = subscribeProperties(
+      (rows) => setProperties(rows),
+      (err) => {
+        console.error(err)
+        if (!listErrorShown.current) {
+          listErrorShown.current = true
+          const code =
+            err && typeof err === 'object' && 'code' in err
+              ? String((err as { code: string }).code)
+              : ''
+          if (code === 'permission-denied') {
+            toast.error(tErrors('firestorePermissionDenied'))
+          } else {
+            toast.error(tErrors('somethingWentWrong'))
+          }
+        }
+      },
+    )
+    return () => unsubscribe()
+  }, [tErrors])
+
+  const filteredProperties = properties.filter((property) => {
     const name = locale === 'ar' ? property.nameAr : property.nameEn
-    const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase())
+    const address = locale === 'ar' ? property.addressAr : property.addressEn
+    const q = searchQuery.toLowerCase()
+    const matchesSearch =
+      name.toLowerCase().includes(q) ||
+      address.toLowerCase().includes(q) ||
+      property.city.toLowerCase().includes(q) ||
+      (property.code?.toLowerCase().includes(q) ?? false) ||
+      (property.plotNumber?.toLowerCase().includes(q) ?? false)
     const matchesGovernorate = governorateFilter === 'all' || property.governorate === governorateFilter
     const matchesType = typeFilter === 'all' || property.type === typeFilter
     return matchesSearch && matchesGovernorate && matchesType
@@ -69,15 +99,20 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground">
-            {demoProperties.length} {t('title').toLowerCase()}
+            {properties.length} {t('title').toLowerCase()}
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog
+          open={isAddDialogOpen}
+          onOpenChange={(open) => {
+            setIsAddDialogOpen(open)
+            if (open) setPropertyFormKey((k) => k + 1)
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="me-2 h-4 w-4" />
@@ -87,16 +122,13 @@ export default function PropertiesPage() {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{t('addProperty')}</DialogTitle>
-              <DialogDescription>
-                Add a new property to your portfolio
-              </DialogDescription>
+              <DialogDescription>{t('addPropertyDescription')}</DialogDescription>
             </DialogHeader>
-            <PropertyForm onSuccess={() => setIsAddDialogOpen(false)} />
+            <PropertyForm key={propertyFormKey} onSuccess={() => setIsAddDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -112,7 +144,9 @@ export default function PropertiesPage() {
             <SelectValue placeholder={t('governorate')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{tCommon('all')} {t('governorate')}</SelectItem>
+            <SelectItem value="all">
+              {tCommon('all')} {t('governorate')}
+            </SelectItem>
             {OMAN_GOVERNORATES.map((gov) => (
               <SelectItem key={gov} value={gov}>
                 {tGov(gov)}
@@ -125,7 +159,9 @@ export default function PropertiesPage() {
             <SelectValue placeholder={t('propertyType')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{tCommon('all')} {t('propertyType')}</SelectItem>
+            <SelectItem value="all">
+              {tCommon('all')} {t('propertyType')}
+            </SelectItem>
             <SelectItem value="residential_building">{t('types.residential_building')}</SelectItem>
             <SelectItem value="commercial_building">{t('types.commercial_building')}</SelectItem>
             <SelectItem value="mixed_use">{t('types.mixed_use')}</SelectItem>
@@ -135,89 +171,125 @@ export default function PropertiesPage() {
         </Select>
       </div>
 
-      {/* Properties Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredProperties.map((property) => {
-          const name = locale === 'ar' ? property.nameAr : property.nameEn
-          const address = locale === 'ar' ? property.addressAr : property.addressEn
-          const occupancyRate = Math.round((property.occupiedUnits / property.totalUnits) * 100)
+      <div className="overflow-hidden rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[7.5rem] min-w-[7rem]">{tForms('propertyCode')}</TableHead>
+              <TableHead className="min-w-[10rem] max-w-[14rem]">{t('propertyName')}</TableHead>
+              <TableHead className="hidden lg:table-cell w-[6.5rem]">{t('plotNumber')}</TableHead>
+              <TableHead className="hidden md:table-cell">{t('propertyType')}</TableHead>
+              <TableHead className="hidden xl:table-cell min-w-[9rem] max-w-[12rem]">
+                {t('governorate')}
+              </TableHead>
+              <TableHead className="text-end tabular-nums">{t('totalUnits')}</TableHead>
+              <TableHead className="hidden sm:table-cell text-end tabular-nums">{t('occupancy')}</TableHead>
+              <TableHead className="w-12 text-end" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredProperties.map((property) => {
+              const name = locale === 'ar' ? property.nameAr : property.nameEn
+              const addressLine = locale === 'ar' ? property.addressAr : property.addressEn
+              const occupied = property.occupiedUnits ?? 0
+              const total = Math.max(1, property.totalUnits)
+              const occupancyRate = Math.round((occupied / total) * 100)
 
-          return (
-            <Card key={property.id} className="group">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                      <Building2 className="h-5 w-5 text-primary" />
+              return (
+                <TableRow key={property.id}>
+                  <TableCell className="align-middle">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {property.code ?? '—'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="min-w-0 max-w-[14rem]">
+                    <div className="flex items-start gap-2">
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium leading-tight">{name}</p>
+                        <p className="mt-0.5 flex items-start gap-1 truncate text-xs text-muted-foreground">
+                          <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+                          <span className="truncate">{property.city}</span>
+                        </p>
+                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground xl:hidden">
+                          {addressLine}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-base">{name}</CardTitle>
-                      <CardDescription className="flex items-center gap-1 text-xs">
-                        <MapPin className="h-3 w-3" />
-                        {tGov(property.governorate)}, {property.city}
-                      </CardDescription>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground">
+                    <span className="line-clamp-2 text-sm">
+                      {property.plotNumber?.trim() ? property.plotNumber : '—'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Badge variant="secondary" className="max-w-full whitespace-normal text-xs font-normal">
+                      {t(`types.${property.type}`)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden xl:table-cell min-w-0 max-w-[12rem]">
+                    <p className="truncate text-sm">{tGov(property.governorate)}</p>
+                    <p className="truncate text-xs text-muted-foreground">{property.city}</p>
+                  </TableCell>
+                  <TableCell className="text-end tabular-nums">
+                    <span className="text-sm font-medium">{occupied}</span>
+                    <span className="text-muted-foreground">/</span>
+                    <span className="text-sm text-muted-foreground">{property.totalUnits}</span>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-end">
+                    <div className="ms-auto flex max-w-[5.5rem] flex-col items-end gap-1">
+                      <span className="tabular-nums text-sm font-medium text-primary">{occupancyRate}%</span>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${occupancyRate}%` }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Eye className="me-2 h-4 w-4" />
-                        {tCommon('view')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Pencil className="me-2 h-4 w-4" />
-                        {tCommon('edit')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
-                        <Trash2 className="me-2 h-4 w-4" />
-                        {tCommon('delete')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Badge variant="secondary" className="text-xs">
-                  {t(`types.${property.type}`)}
-                </Badge>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Home className="h-4 w-4" />
-                    {property.totalUnits} {t('totalUnits').toLowerCase()}
-                  </div>
-                  <span className="font-medium text-primary">{occupancyRate}%</span>
-                </div>
-                
-                <div className="h-2 rounded-full bg-secondary">
-                  <div 
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${occupancyRate}%` }}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{property.occupiedUnits} occupied</span>
-                  <span>{property.totalUnits - property.occupiedUnits} vacant</span>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+                  </TableCell>
+                  <TableCell className="w-12 text-end align-middle">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Eye className="me-2 h-4 w-4" />
+                          {tCommon('view')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Pencil className="me-2 h-4 w-4" />
+                          {tCommon('edit')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">
+                          <Trash2 className="me-2 h-4 w-4" />
+                          {tCommon('delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+
+        {filteredProperties.length === 0 && (
+          <div className="flex flex-col items-center justify-center border-t py-12 text-center">
+            <Home className="mb-4 h-12 w-12 text-muted-foreground" />
+            <h3 className="text-lg font-medium">
+              {locale === 'ar' ? 'لا توجد عقارات' : 'No properties found'}
+            </h3>
+            <p className="text-muted-foreground">
+              {locale === 'ar' ? 'جرّب تعديل البحث أو المرشحات' : 'Try adjusting your search or filters'}
+            </p>
+          </div>
+        )}
       </div>
-
-      {filteredProperties.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Building2 className="mb-4 h-12 w-12 text-muted-foreground" />
-          <h3 className="text-lg font-medium">No properties found</h3>
-          <p className="text-muted-foreground">Try adjusting your search or filters</p>
-        </div>
-      )}
     </div>
   )
 }
