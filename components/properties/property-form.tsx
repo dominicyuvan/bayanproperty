@@ -127,6 +127,7 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
         addressAr: data.addressAr,
         totalUnits: data.totalUnits,
         amenities,
+        managerId: user.id,
       })
       toast.success(t('propertySaved'))
       onSuccess?.()

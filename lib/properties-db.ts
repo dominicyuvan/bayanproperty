@@ -1,12 +1,4 @@
-import {
-  addDoc,
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  Timestamp,
-} from 'firebase/firestore'
+import { addDoc, collection, onSnapshot, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import {
   OMAN_GOVERNORATES,
@@ -73,6 +65,15 @@ export function mapPropertyDoc(id: string, data: Record<string, unknown>): Prope
 
 export type PropertySnapshotErrorHandler = (error: Error) => void
 
+function sortPropertiesNewestFirst(rows: Property[]): Property[] {
+  return [...rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+}
+
+/**
+ * Listens to all property documents (no server `orderBy`).
+ * Avoids excluding rows while `createdAt` is still a pending server timestamp
+ * and avoids composite-index requirements for simple setups.
+ */
 export function subscribeProperties(
   onData: (rows: Property[]) => void,
   onError?: PropertySnapshotErrorHandler,
@@ -81,11 +82,12 @@ export function subscribeProperties(
     onData([])
     return () => {}
   }
-  const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'))
+  const col = collection(db, COLLECTION)
   return onSnapshot(
-    q,
+    col,
     (snap) => {
-      onData(snap.docs.map((d) => mapPropertyDoc(d.id, d.data() as Record<string, unknown>)))
+      const rows = snap.docs.map((d) => mapPropertyDoc(d.id, d.data() as Record<string, unknown>))
+      onData(sortPropertiesNewestFirst(rows))
     },
     (err) => onError?.(err as Error),
   )
@@ -103,11 +105,15 @@ export type CreatePropertyInput = {
   addressAr: string
   totalUnits: number
   amenities: string[]
+  /** Set to the signed-in user so Firestore rules can scope reads (e.g. managerId == uid). */
+  managerId?: string
 }
 
 export async function createPropertyRecord(input: CreatePropertyInput): Promise<string> {
   if (!db) throw new Error('Firestore not initialized')
   const plot = input.plotNumber?.trim()
+  const total = Number(input.totalUnits)
+  const totalUnits = Math.max(1, Number.isFinite(total) ? Math.floor(total) : 1)
   const ref = await addDoc(collection(db, COLLECTION), {
     code: input.code.trim(),
     ...(plot ? { plotNumber: plot } : {}),
@@ -118,8 +124,9 @@ export async function createPropertyRecord(input: CreatePropertyInput): Promise<
     city: input.city.trim(),
     addressEn: input.addressEn.trim(),
     addressAr: input.addressAr.trim(),
-    totalUnits: Math.max(1, input.totalUnits),
+    totalUnits,
     occupiedUnits: 0,
+    ...(input.managerId ? { managerId: input.managerId } : {}),
     images: [],
     amenities: input.amenities,
     createdAt: serverTimestamp(),
