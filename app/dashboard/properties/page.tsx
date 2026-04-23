@@ -32,51 +32,20 @@ import {
 import { PropertyForm } from '@/components/properties/property-form'
 import { OMAN_GOVERNORATES, type PropertyType } from '@/lib/types'
 
-// Demo data
-const demoProperties = [
-  {
-    id: '1',
-    nameEn: 'Al Mouj Residences',
-    nameAr: 'سكن الموج',
-    type: 'residential_building' as PropertyType,
-    governorate: 'Muscat' as const,
-    city: 'Al Mouj',
-    addressEn: 'Al Mouj, Muscat',
-    addressAr: 'الموج، مسقط',
-    totalUnits: 48,
-    occupiedUnits: 42,
-    images: [],
-    amenities: ['Pool', 'Gym', 'Parking'],
-  },
-  {
-    id: '2',
-    nameEn: 'Qurum Business Center',
-    nameAr: 'مركز القرم للأعمال',
-    type: 'commercial_building' as PropertyType,
-    governorate: 'Muscat' as const,
-    city: 'Qurum',
-    addressEn: 'Qurum Heights, Muscat',
-    addressAr: 'مرتفعات القرم، مسقط',
-    totalUnits: 24,
-    occupiedUnits: 20,
-    images: [],
-    amenities: ['Elevator', 'Security', 'Parking'],
-  },
-  {
-    id: '3',
-    nameEn: 'Salalah Palm Villas',
-    nameAr: 'فلل نخيل صلالة',
-    type: 'villa_compound' as PropertyType,
-    governorate: 'Dhofar' as const,
-    city: 'Salalah',
-    addressEn: 'West Salalah, Dhofar',
-    addressAr: 'غرب صلالة، ظفار',
-    totalUnits: 12,
-    occupiedUnits: 10,
-    images: [],
-    amenities: ['Garden', 'Parking', 'Security'],
-  },
-]
+const demoProperties: Array<{
+  id: string
+  nameEn: string
+  nameAr: string
+  type: PropertyType
+  governorate: (typeof OMAN_GOVERNORATES)[number]
+  city: string
+  addressEn: string
+  addressAr: string
+  totalUnits: number
+  occupiedUnits: number
+  images: string[]
+  amenities: string[]
+}> = []
 
 export default function PropertiesPage() {
   const t = useTranslations('properties')

@@ -32,62 +32,20 @@ import {
 import { AnnouncementForm } from '@/components/announcements/announcement-form'
 import { type AnnouncementType, type AnnouncementPriority, type AnnouncementTarget } from '@/lib/types'
 
-// Demo data
-const demoAnnouncements = [
-  {
-    id: '1',
-    title: 'Scheduled Maintenance - Water Supply',
-    titleAr: 'صيانة مجدولة - إمدادات المياه',
-    content: 'Water supply will be temporarily interrupted on January 20th from 9 AM to 12 PM for maintenance work.',
-    contentAr: 'سيتم قطع إمدادات المياه مؤقتاً في 20 يناير من الساعة 9 صباحاً حتى 12 ظهراً لأعمال الصيانة.',
-    type: 'maintenance' as AnnouncementType,
-    targetAudience: 'all' as AnnouncementTarget,
-    priority: 'high' as AnnouncementPriority,
-    publishedAt: new Date('2024-01-15'),
-    createdBy: 'Admin',
-    notificationsSent: { email: true, sms: true },
-  },
-  {
-    id: '2',
-    title: 'Rent Payment Reminder',
-    titleAr: 'تذكير بدفع الإيجار',
-    content: 'This is a friendly reminder that rent payments for January are due by the 5th.',
-    contentAr: 'هذا تذكير ودي بأن مدفوعات الإيجار لشهر يناير مستحقة بحلول الخامس.',
-    type: 'payment_reminder' as AnnouncementType,
-    targetAudience: 'tenants' as AnnouncementTarget,
-    priority: 'normal' as AnnouncementPriority,
-    publishedAt: new Date('2024-01-01'),
-    createdBy: 'Finance Team',
-    notificationsSent: { email: true, sms: false },
-  },
-  {
-    id: '3',
-    title: 'Annual General Meeting Notice',
-    titleAr: 'إشعار الاجتماع العام السنوي',
-    content: 'The annual general meeting of the owners association will be held on February 1st at 7 PM in the community hall.',
-    contentAr: 'سيُعقد الاجتماع العام السنوي لجمعية الملاك في 1 فبراير الساعة 7 مساءً في قاعة المجتمع.',
-    type: 'association' as AnnouncementType,
-    targetAudience: 'owners' as AnnouncementTarget,
-    priority: 'high' as AnnouncementPriority,
-    publishedAt: new Date('2024-01-10'),
-    expiresAt: new Date('2024-02-01'),
-    createdBy: 'Association Admin',
-    notificationsSent: { email: true, sms: true },
-  },
-  {
-    id: '4',
-    title: 'Emergency: Power Outage',
-    titleAr: 'طوارئ: انقطاع الكهرباء',
-    content: 'Due to unexpected power line damage, there will be a power outage. Estimated restoration time: 2 hours.',
-    contentAr: 'بسبب تلف غير متوقع في خطوط الكهرباء، سيكون هناك انقطاع للتيار. الوقت المقدر للاستعادة: ساعتان.',
-    type: 'urgent' as AnnouncementType,
-    targetAudience: 'all' as AnnouncementTarget,
-    priority: 'urgent' as AnnouncementPriority,
-    publishedAt: new Date('2024-01-12'),
-    createdBy: 'Facility Manager',
-    notificationsSent: { email: true, sms: true },
-  },
-]
+const demoAnnouncements: Array<{
+  id: string
+  title: string
+  titleAr: string
+  content: string
+  contentAr: string
+  type: AnnouncementType
+  targetAudience: AnnouncementTarget
+  priority: AnnouncementPriority
+  publishedAt: Date
+  expiresAt?: Date
+  createdBy: string
+  notificationsSent: { email: boolean; sms: boolean }
+}> = []
 
 const typeIcons: Record<AnnouncementType, React.ComponentType<{ className?: string }>> = {
   general: Info,

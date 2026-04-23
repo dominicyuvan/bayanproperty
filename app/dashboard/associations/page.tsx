@@ -26,51 +26,20 @@ import {
 import { AssociationForm } from '@/components/associations/association-form'
 import { formatOMR } from '@/lib/types'
 
-// Demo data
-const demoAssociations = [
-  {
-    id: '1',
-    nameEn: 'Al Mouj Residents Association',
-    nameAr: 'جمعية سكان الموج',
-    propertyCount: 2,
-    memberCount: 45,
-    annualBudget: 25000,
-    chairpersonNameEn: 'Mohammed Al-Lawati',
-    chairpersonNameAr: 'محمد اللواتي',
-    meetingSchedule: 'First Saturday of each month',
-    meetingScheduleAr: 'السبت الأول من كل شهر',
-    contactEmail: 'association@almouj.om',
-    contactPhone: '+968 9912 3456',
-  },
-  {
-    id: '2',
-    nameEn: 'Qurum Heights Association',
-    nameAr: 'جمعية مرتفعات القرم',
-    propertyCount: 1,
-    memberCount: 20,
-    annualBudget: 12000,
-    chairpersonNameEn: 'Fatima Al-Balushi',
-    chairpersonNameAr: 'فاطمة البلوشي',
-    meetingSchedule: 'Quarterly meetings',
-    meetingScheduleAr: 'اجتماعات ربع سنوية',
-    contactEmail: 'association@qurumheights.om',
-    contactPhone: '+968 9923 4567',
-  },
-  {
-    id: '3',
-    nameEn: 'Salalah Palm Community',
-    nameAr: 'مجتمع نخيل صلالة',
-    propertyCount: 1,
-    memberCount: 12,
-    annualBudget: 8000,
-    chairpersonNameEn: 'Ahmed Al-Mashani',
-    chairpersonNameAr: 'أحمد المشاني',
-    meetingSchedule: 'Monthly on the 15th',
-    meetingScheduleAr: 'شهرياً في الخامس عشر',
-    contactEmail: 'community@salalahpalm.om',
-    contactPhone: '+968 9934 5678',
-  },
-]
+const demoAssociations: Array<{
+  id: string
+  nameEn: string
+  nameAr: string
+  propertyCount: number
+  memberCount: number
+  annualBudget: number
+  chairpersonNameEn: string
+  chairpersonNameAr: string
+  meetingSchedule: string
+  meetingScheduleAr: string
+  contactEmail: string
+  contactPhone: string
+}> = []
 
 export default function AssociationsPage() {
   const t = useTranslations('associations')

@@ -18,24 +18,26 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatOMR } from '@/lib/types'
 
-// Demo data - will be replaced with real data from Firebase
 const stats = {
-  totalProperties: 12,
-  totalUnits: 156,
-  occupiedUnits: 134,
-  vacantUnits: 22,
-  pendingPayments: 8,
-  overduePayments: 3,
-  maintenanceRequests: 5,
-  monthlyRevenue: 45250.500,
+  totalProperties: 0,
+  totalUnits: 0,
+  occupiedUnits: 0,
+  vacantUnits: 0,
+  pendingPayments: 0,
+  overduePayments: 0,
+  maintenanceRequests: 0,
+  monthlyRevenue: 0,
 }
 
-const recentActivities = [
-  { id: 1, type: 'payment', titleEn: 'Rent payment received', titleAr: 'تم استلام دفعة الإيجار', unit: 'A-101', amount: 350, date: new Date() },
-  { id: 2, type: 'maintenance', titleEn: 'New maintenance request', titleAr: 'طلب صيانة جديد', unit: 'B-205', date: new Date(Date.now() - 3600000) },
-  { id: 3, type: 'lease', titleEn: 'Lease renewal signed', titleAr: 'تم توقيع تجديد العقد', unit: 'C-302', date: new Date(Date.now() - 7200000) },
-  { id: 4, type: 'payment', titleEn: 'Payment overdue', titleAr: 'دفعة متأخرة', unit: 'A-105', amount: 400, date: new Date(Date.now() - 86400000) },
-]
+const recentActivities: Array<{
+  id: number
+  type: 'payment' | 'maintenance' | 'lease'
+  titleEn: string
+  titleAr: string
+  unit: string
+  amount?: number
+  date: Date
+}> = []
 
 export function DashboardContent() {
   const t = useTranslations('dashboard')
@@ -45,7 +47,8 @@ export function DashboardContent() {
 
   const displayName = locale === 'ar' ? user?.nameAr : user?.nameEn
 
-  const occupancyRate = Math.round((stats.occupiedUnits / stats.totalUnits) * 100)
+  const occupancyRate =
+    stats.totalUnits > 0 ? Math.round((stats.occupiedUnits / stats.totalUnits) * 100) : 0
 
   return (
     <div className="space-y-6">
@@ -230,6 +233,9 @@ export function DashboardContent() {
                   </span>
                 </div>
               ))}
+              {recentActivities.length === 0 && (
+                <p className="text-sm text-muted-foreground">No recent activity yet.</p>
+              )}
             </div>
           </CardContent>
         </Card>

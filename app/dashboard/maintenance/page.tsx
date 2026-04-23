@@ -32,60 +32,20 @@ import {
 import { MaintenanceForm } from '@/components/maintenance/maintenance-form'
 import { type MaintenancePriority, type MaintenanceStatus } from '@/lib/types'
 
-// Demo data
-const demoRequests = [
-  {
-    id: '1',
-    unitNumber: 'A-101',
-    tenantNameEn: 'Ahmed Al-Balushi',
-    tenantNameAr: 'أحمد البلوشي',
-    title: 'AC not cooling properly',
-    titleAr: 'المكيف لا يبرد بشكل صحيح',
-    description: 'The air conditioner in the living room is making noise and not cooling.',
-    priority: 'high' as MaintenancePriority,
-    status: 'open' as MaintenanceStatus,
-    createdAt: new Date('2024-01-10'),
-  },
-  {
-    id: '2',
-    unitNumber: 'B-201',
-    tenantNameEn: 'Tech Solutions LLC',
-    tenantNameAr: 'تك سوليوشنز ذ.م.م',
-    title: 'Leaking faucet',
-    titleAr: 'صنبور يسرب',
-    description: 'Kitchen faucet is dripping continuously.',
-    priority: 'medium' as MaintenancePriority,
-    status: 'in_progress' as MaintenanceStatus,
-    assignedTo: 'Maintenance Team',
-    createdAt: new Date('2024-01-08'),
-  },
-  {
-    id: '3',
-    unitNumber: 'V-01',
-    tenantNameEn: 'Mohammed Al-Lawati',
-    tenantNameAr: 'محمد اللواتي',
-    title: 'Broken door handle',
-    titleAr: 'مقبض باب مكسور',
-    description: 'Main entrance door handle is broken.',
-    priority: 'low' as MaintenancePriority,
-    status: 'resolved' as MaintenanceStatus,
-    assignedTo: 'Handyman Services',
-    createdAt: new Date('2024-01-05'),
-    resolvedAt: new Date('2024-01-07'),
-  },
-  {
-    id: '4',
-    unitNumber: 'A-102',
-    tenantNameEn: 'Sara Al-Habsi',
-    tenantNameAr: 'سارة الحبسي',
-    title: 'Water heater malfunction',
-    titleAr: 'عطل في سخان المياه',
-    description: 'No hot water in bathrooms. Water heater seems to be broken.',
-    priority: 'urgent' as MaintenancePriority,
-    status: 'open' as MaintenanceStatus,
-    createdAt: new Date('2024-01-12'),
-  },
-]
+const demoRequests: Array<{
+  id: string
+  unitNumber: string
+  tenantNameEn: string
+  tenantNameAr: string
+  title: string
+  titleAr: string
+  description: string
+  priority: MaintenancePriority
+  status: MaintenanceStatus
+  createdAt: Date
+  assignedTo?: string
+  resolvedAt?: Date
+}> = []
 
 const priorityStyles: Record<MaintenancePriority, { className: string }> = {
   low: { className: 'bg-gray-100 text-gray-700 hover:bg-gray-100' },

@@ -40,67 +40,19 @@ import {
 import { PaymentForm } from '@/components/payments/payment-form'
 import { formatOMR, type PaymentStatus, type PaymentType } from '@/lib/types'
 
-// Demo data
-const demoPayments = [
-  {
-    id: '1',
-    unitNumber: 'A-101',
-    tenantNameEn: 'Ahmed Al-Balushi',
-    tenantNameAr: 'أحمد البلوشي',
-    amount: 450,
-    type: 'rent' as PaymentType,
-    status: 'paid' as PaymentStatus,
-    dueDate: new Date('2024-01-01'),
-    paidDate: new Date('2024-01-03'),
-    method: 'Bank Transfer',
-    reference: 'TRX-2024-001',
-  },
-  {
-    id: '2',
-    unitNumber: 'A-102',
-    tenantNameEn: 'Sara Al-Habsi',
-    tenantNameAr: 'سارة الحبسي',
-    amount: 550,
-    type: 'rent' as PaymentType,
-    status: 'pending' as PaymentStatus,
-    dueDate: new Date('2024-01-15'),
-  },
-  {
-    id: '3',
-    unitNumber: 'B-201',
-    tenantNameEn: 'Tech Solutions LLC',
-    tenantNameAr: 'تك سوليوشنز ذ.م.م',
-    amount: 350,
-    type: 'rent' as PaymentType,
-    status: 'overdue' as PaymentStatus,
-    dueDate: new Date('2023-12-15'),
-  },
-  {
-    id: '4',
-    unitNumber: 'A-101',
-    tenantNameEn: 'Ahmed Al-Balushi',
-    tenantNameAr: 'أحمد البلوشي',
-    amount: 25,
-    type: 'service_charge' as PaymentType,
-    status: 'paid' as PaymentStatus,
-    dueDate: new Date('2024-01-01'),
-    paidDate: new Date('2024-01-03'),
-    method: 'Cash',
-    reference: 'SC-2024-001',
-  },
-  {
-    id: '5',
-    unitNumber: 'V-01',
-    tenantNameEn: 'Mohammed Al-Lawati',
-    tenantNameAr: 'محمد اللواتي',
-    amount: 850,
-    type: 'rent' as PaymentType,
-    status: 'partial' as PaymentStatus,
-    dueDate: new Date('2024-01-01'),
-    paidDate: new Date('2024-01-05'),
-    reference: 'TRX-2024-005',
-  },
-]
+const demoPayments: Array<{
+  id: string
+  unitNumber: string
+  tenantNameEn: string
+  tenantNameAr: string
+  amount: number
+  type: PaymentType
+  status: PaymentStatus
+  dueDate: Date
+  paidDate?: Date
+  method?: string
+  reference?: string
+}> = []
 
 const statusStyles: Record<PaymentStatus, { icon: React.ComponentType<{ className?: string }>, variant: 'default' | 'secondary' | 'destructive' | 'outline', className: string }> = {
   pending: { icon: Clock, variant: 'secondary', className: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100' },

@@ -11,49 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 
-// Demo notifications
-const demoNotifications = [
-  {
-    id: '1',
-    type: 'announcement',
-    titleEn: 'Scheduled Maintenance - Water Supply',
-    titleAr: 'صيانة مجدولة - إمدادات المياه',
-    messageEn: 'Water supply will be temporarily interrupted tomorrow.',
-    messageAr: 'سيتم قطع إمدادات المياه مؤقتاً غداً.',
-    read: false,
-    createdAt: new Date(Date.now() - 3600000),
-  },
-  {
-    id: '2',
-    type: 'payment',
-    titleEn: 'Payment Received',
-    titleAr: 'تم استلام الدفعة',
-    messageEn: 'Your rent payment of OMR 450.000 has been received.',
-    messageAr: 'تم استلام دفعة الإيجار بمبلغ 450.000 ر.ع.',
-    read: false,
-    createdAt: new Date(Date.now() - 7200000),
-  },
-  {
-    id: '3',
-    type: 'maintenance',
-    titleEn: 'Maintenance Request Update',
-    titleAr: 'تحديث طلب الصيانة',
-    messageEn: 'Your AC repair request has been assigned to a technician.',
-    messageAr: 'تم تعيين طلب إصلاح المكيف لفني.',
-    read: true,
-    createdAt: new Date(Date.now() - 86400000),
-  },
-  {
-    id: '4',
-    type: 'association',
-    titleEn: 'Meeting Reminder',
-    titleAr: 'تذكير بالاجتماع',
-    messageEn: 'Annual general meeting is scheduled for February 1st.',
-    messageAr: 'الاجتماع العام السنوي مقرر في 1 فبراير.',
-    read: true,
-    createdAt: new Date(Date.now() - 172800000),
-  },
-]
+const demoNotifications: Array<{
+  id: string
+  type: string
+  titleEn: string
+  titleAr: string
+  messageEn: string
+  messageAr: string
+  read: boolean
+  createdAt: Date
+}> = []
 
 const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   announcement: Megaphone,

@@ -39,83 +39,22 @@ import {
 import { UnitForm } from '@/components/units/unit-form'
 import { formatOMR, type UnitStatus, type UnitType } from '@/lib/types'
 
-// Demo data
-const demoUnits = [
-  {
-    id: '1',
-    propertyId: '1',
-    propertyNameEn: 'Al Mouj Residences',
-    propertyNameAr: 'سكن الموج',
-    unitNumber: 'A-101',
-    type: 'apartment' as UnitType,
-    floor: 1,
-    bedrooms: 2,
-    bathrooms: 2,
-    areaSquareMeters: 120,
-    monthlyRent: 450,
-    status: 'occupied' as UnitStatus,
-    tenantNameEn: 'Ahmed Al-Balushi',
-    tenantNameAr: 'أحمد البلوشي',
-  },
-  {
-    id: '2',
-    propertyId: '1',
-    propertyNameEn: 'Al Mouj Residences',
-    propertyNameAr: 'سكن الموج',
-    unitNumber: 'A-102',
-    type: 'apartment' as UnitType,
-    floor: 1,
-    bedrooms: 3,
-    bathrooms: 2,
-    areaSquareMeters: 150,
-    monthlyRent: 550,
-    status: 'vacant' as UnitStatus,
-  },
-  {
-    id: '3',
-    propertyId: '2',
-    propertyNameEn: 'Qurum Business Center',
-    propertyNameAr: 'مركز القرم للأعمال',
-    unitNumber: 'B-201',
-    type: 'office' as UnitType,
-    floor: 2,
-    bedrooms: 0,
-    bathrooms: 1,
-    areaSquareMeters: 80,
-    monthlyRent: 350,
-    status: 'occupied' as UnitStatus,
-    tenantNameEn: 'Tech Solutions LLC',
-    tenantNameAr: 'تك سوليوشنز ذ.م.م',
-  },
-  {
-    id: '4',
-    propertyId: '3',
-    propertyNameEn: 'Salalah Palm Villas',
-    propertyNameAr: 'فلل نخيل صلالة',
-    unitNumber: 'V-01',
-    type: 'villa' as UnitType,
-    floor: 0,
-    bedrooms: 4,
-    bathrooms: 3,
-    areaSquareMeters: 350,
-    monthlyRent: 850,
-    status: 'maintenance' as UnitStatus,
-  },
-  {
-    id: '5',
-    propertyId: '1',
-    propertyNameEn: 'Al Mouj Residences',
-    propertyNameAr: 'سكن الموج',
-    unitNumber: 'A-301',
-    type: 'penthouse' as UnitType,
-    floor: 3,
-    bedrooms: 4,
-    bathrooms: 3,
-    areaSquareMeters: 250,
-    monthlyRent: 950,
-    status: 'reserved' as UnitStatus,
-  },
-]
+const demoUnits: Array<{
+  id: string
+  propertyId: string
+  propertyNameEn: string
+  propertyNameAr: string
+  unitNumber: string
+  type: UnitType
+  floor: number
+  bedrooms: number
+  bathrooms: number
+  areaSquareMeters: number
+  monthlyRent: number
+  status: UnitStatus
+  tenantNameEn?: string
+  tenantNameAr?: string
+}> = []
 
 const statusStyles: Record<UnitStatus, { variant: 'default' | 'secondary' | 'destructive' | 'outline', className: string }> = {
   vacant: { variant: 'secondary', className: 'bg-green-100 text-green-700 hover:bg-green-100' },
