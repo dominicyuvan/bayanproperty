@@ -38,6 +38,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { PaymentForm } from '@/components/payments/payment-form'
+import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
 import { formatOMR, type PaymentStatus, type PaymentType } from '@/lib/types'
 
 const demoPayments: Array<{
@@ -69,6 +70,7 @@ export default function PaymentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  useOpenAddDialogFromQuery(setIsAddDialogOpen)
 
   const filteredPayments = demoPayments.filter((payment) => {
     const name = locale === 'ar' ? payment.tenantNameAr : payment.tenantNameEn

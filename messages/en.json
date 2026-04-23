@@ -33,6 +33,13 @@
     "no": "No",
     "currency": "OMR"
   },
+  "forms": {
+    "propertyCode": "Property code",
+    "propertyCodeHelp": "Unique reference. Regenerate to change the suffix, or after selecting a governorate for a region prefix.",
+    "regenerateCode": "Regenerate",
+    "autoTranslateAr": "Auto-translate to Arabic (when Arabic field is empty)",
+    "translating": "Translating…"
+  },
   "auth": {
     "signIn": "Sign In",
     "signOut": "Sign Out",
@@ -91,6 +98,8 @@
     "totalUnits": "Total Units",
     "manager": "Property Manager",
     "amenities": "Amenities",
+    "plotNumber": "Plot number",
+    "plotNumberHelp": "Land registry / cadastral plot number (supports official naming alongside the property name).",
     "types": {
       "residential_building": "Residential Building",
       "commercial_building": "Commercial Building",
@@ -105,6 +114,8 @@
     "editUnit": "Edit Unit",
     "unitDetails": "Unit Details",
     "unitNumber": "Unit Number",
+    "municipalityUnitNumber": "Municipality unit number",
+    "municipalityUnitNumberHelp": "Official unit number from the municipal (Baladiya) register.",
     "unitType": "Unit Type",
     "floor": "Floor",
     "bedrooms": "Bedrooms",
@@ -134,6 +145,9 @@
   "tenants": {
     "title": "Tenants",
     "addTenant": "Add Tenant",
+    "addTenantDescription": "Enter contact details and unit label. Data is saved to Firestore. Tenants can still register their own login from Register.",
+    "tenantSaved": "Tenant saved successfully",
+    "unitNumberHelp": "Unit or door reference (e.g. building-wing). Link to a property unit record can be added later.",
     "editTenant": "Edit Tenant",
     "tenantDetails": "Tenant Details",
     "currentUnit": "Current Unit",
@@ -160,8 +174,10 @@
     "associationDetails": "Association Details",
     "chairperson": "Chairperson",
     "members": "Members",
-    "annualBudget": "Annual Budget",
-    "meetingSchedule": "Meeting Schedule",
+    "annualBudget": "Annual fee (OMR)",
+    "sellableArea": "Sellable area (m²)",
+    "feePerSqm": "Annual fee (OMR / m²)",
+    "annualFeeCalculatedHelp": "Annual fee = sellable area × OMR per square metre.",
     "managedProperties": "Managed Properties"
   },
   "payments": {
@@ -275,6 +291,8 @@
     "passwordMismatch": "Passwords do not match",
     "somethingWentWrong": "Something went wrong",
     "notFound": "Not found",
-    "unauthorized": "Unauthorized"
+    "unauthorized": "Unauthorized",
+    "databaseUnavailable": "Database is not available. Check Firebase configuration.",
+    "firestorePermissionDenied": "You do not have permission to save this data. In Firebase Console, add Firestore rules for the \"tenants\" collection for signed-in users."
   }
 }

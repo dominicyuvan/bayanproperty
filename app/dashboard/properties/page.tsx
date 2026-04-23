@@ -30,6 +30,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { PropertyForm } from '@/components/properties/property-form'
+import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
 import { OMAN_GOVERNORATES, type PropertyType } from '@/lib/types'
 
 const demoProperties: Array<{
@@ -56,6 +57,7 @@ export default function PropertiesPage() {
   const [governorateFilter, setGovernorateFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  useOpenAddDialogFromQuery(setIsAddDialogOpen)
 
   const filteredProperties = demoProperties.filter((property) => {
     const name = locale === 'ar' ? property.nameAr : property.nameEn

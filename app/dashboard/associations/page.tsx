@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Search, Building, Users, Calendar, DollarSign, MoreHorizontal, Pencil, Trash2, Eye, Mail, Phone } from 'lucide-react'
+import { Plus, Search, Building, Users, DollarSign, MoreHorizontal, Pencil, Trash2, Eye, Mail, Phone } from 'lucide-react'
 import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,8 +35,6 @@ const demoAssociations: Array<{
   annualBudget: number
   chairpersonNameEn: string
   chairpersonNameAr: string
-  meetingSchedule: string
-  meetingScheduleAr: string
   contactEmail: string
   contactPhone: string
 }> = []
@@ -98,7 +96,6 @@ export default function AssociationsPage() {
         {filteredAssociations.map((association) => {
           const name = locale === 'ar' ? association.nameAr : association.nameEn
           const chairperson = locale === 'ar' ? association.chairpersonNameAr : association.chairpersonNameEn
-          const schedule = locale === 'ar' ? association.meetingScheduleAr : association.meetingSchedule
           const initials = chairperson.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 
           return (
@@ -169,12 +166,6 @@ export default function AssociationsPage() {
                       <p className="text-xs text-muted-foreground">{t('annualBudget')}</p>
                     </div>
                   </div>
-                </div>
-
-                {/* Meeting Schedule */}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span>{schedule}</span>
                 </div>
 
                 {/* Contact */}

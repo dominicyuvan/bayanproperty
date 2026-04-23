@@ -22,6 +22,7 @@ import { UNIT_TYPES } from '@/lib/types'
 const unitSchema = z.object({
   propertyId: z.string().min(1, 'Please select a property'),
   unitNumber: z.string().min(1, 'Unit number is required'),
+  municipalityUnitNumber: z.string().max(120),
   type: z.enum(['apartment', 'studio', 'penthouse', 'office', 'shop', 'warehouse', 'villa']),
   floor: z.number().min(0, 'Floor must be 0 or higher'),
   bedrooms: z.number().min(0, 'Bedrooms must be 0 or higher'),
@@ -33,12 +34,7 @@ const unitSchema = z.object({
 
 type UnitFormData = z.infer<typeof unitSchema>
 
-// Demo properties for selection
-const demoProperties = [
-  { id: '1', nameEn: 'Al Mouj Residences', nameAr: 'سكن الموج' },
-  { id: '2', nameEn: 'Qurum Business Center', nameAr: 'مركز القرم للأعمال' },
-  { id: '3', nameEn: 'Salalah Palm Villas', nameAr: 'فلل نخيل صلالة' },
-]
+const demoProperties: Array<{ id: string; nameEn: string; nameAr: string }> = []
 
 interface UnitFormProps {
   onSuccess?: () => void
@@ -65,6 +61,7 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
       floor: 0,
       bedrooms: 1,
       bathrooms: 1,
+      municipalityUnitNumber: '',
       ...initialData,
     },
   })
@@ -108,7 +105,7 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
           )}
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Field>
             <FieldLabel htmlFor="unitNumber">{t('unitNumber')}</FieldLabel>
             <Input
@@ -123,6 +120,20 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
           </Field>
 
           <Field>
+            <FieldLabel htmlFor="municipalityUnitNumber">{t('municipalityUnitNumber')}</FieldLabel>
+            <Input
+              id="municipalityUnitNumber"
+              placeholder="Baladiya ref."
+              {...register('municipalityUnitNumber')}
+              className={errors.municipalityUnitNumber ? 'border-destructive' : ''}
+            />
+            <p className="text-xs text-muted-foreground">{t('municipalityUnitNumberHelp')}</p>
+            {errors.municipalityUnitNumber && (
+              <p className="text-sm text-destructive">{errors.municipalityUnitNumber.message}</p>
+            )}
+          </Field>
+
+          <Field className="lg:col-span-1">
             <FieldLabel htmlFor="type">{t('unitType')}</FieldLabel>
             <Select
               value={watch('type')}

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Search, Users, MoreHorizontal, Pencil, Trash2, Eye, Mail, Phone } from 'lucide-react'
+import { toast } from 'sonner'
 import { useLocale } from '@/contexts/locale-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,22 +30,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { TenantForm } from '@/components/tenants/tenant-form'
+import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
+import { subscribeTenantRecords } from '@/lib/tenants-db'
+import type { TenantLeaseStatus, TenantRecord } from '@/lib/types'
 
-type LeaseStatus = 'active' | 'expired' | 'pending'
-
-type TenantRow = {
-  id: string
-  nameEn: string
-  nameAr: string
-  email: string
-  phone: string
-  unitNumber: string
-  leaseStatus: LeaseStatus
-}
-
-const tenants: TenantRow[] = []
-
-const leaseBadge: Record<LeaseStatus, { variant: 'default' | 'secondary' | 'outline' }> = {
+const leaseBadge: Record<TenantLeaseStatus, { variant: 'default' | 'secondary' | 'outline' }> = {
   active: { variant: 'default' },
   expired: { variant: 'secondary' },
   pending: { variant: 'outline' },
@@ -53,9 +44,38 @@ const leaseBadge: Record<LeaseStatus, { variant: 'default' | 'secondary' | 'outl
 export default function TenantsPage() {
   const t = useTranslations('tenants')
   const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
   const { locale } = useLocale()
+  const [tenants, setTenants] = useState<TenantRecord[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [tenantFormKey, setTenantFormKey] = useState(0)
+  const listErrorShown = useRef(false)
+
+  useOpenAddDialogFromQuery(setIsAddDialogOpen, () => setTenantFormKey((k) => k + 1))
+
+  useEffect(() => {
+    listErrorShown.current = false
+    const unsubscribe = subscribeTenantRecords(
+      (rows) => setTenants(rows),
+      (err) => {
+        console.error(err)
+        if (!listErrorShown.current) {
+          listErrorShown.current = true
+          const code =
+            err && typeof err === 'object' && 'code' in err
+              ? String((err as { code: string }).code)
+              : ''
+          if (code === 'permission-denied') {
+            toast.error(tErrors('firestorePermissionDenied'))
+          } else {
+            toast.error(tErrors('somethingWentWrong'))
+          }
+        }
+      },
+    )
+    return () => unsubscribe()
+  }, [tErrors])
 
   const filtered = tenants.filter((row) => {
     const name = (locale === 'ar' ? row.nameAr : row.nameEn).toLowerCase()
@@ -77,25 +97,25 @@ export default function TenantsPage() {
             {tenants.length} {t('title').toLowerCase()}
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog
+          open={isAddDialogOpen}
+          onOpenChange={(open) => {
+            setIsAddDialogOpen(open)
+            if (open) setTenantFormKey((k) => k + 1)
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="me-2 h-4 w-4" />
               {t('addTenant')}
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{t('addTenant')}</DialogTitle>
-              <DialogDescription>
-                {locale === 'ar'
-                  ? 'سيتم ربط إضافة المستأجرين بقاعدة البيانات قريباً. يمكن للمستأجرين التسجيل من صفحة إنشاء الحساب.'
-                  : 'Adding tenants from here will connect to your database soon. Tenants can also sign up via Register.'}
-              </DialogDescription>
+              <DialogDescription>{t('addTenantDescription')}</DialogDescription>
             </DialogHeader>
-            <Button className="w-full" onClick={() => setIsAddDialogOpen(false)}>
-              {tCommon('close')}
-            </Button>
+            <TenantForm key={tenantFormKey} onSuccess={() => setIsAddDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>

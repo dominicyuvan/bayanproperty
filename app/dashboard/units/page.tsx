@@ -37,6 +37,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { UnitForm } from '@/components/units/unit-form'
+import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
 import { formatOMR, type UnitStatus, type UnitType } from '@/lib/types'
 
 const demoUnits: Array<{
@@ -71,6 +72,7 @@ export default function UnitsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  useOpenAddDialogFromQuery(setIsAddDialogOpen)
 
   const filteredUnits = demoUnits.filter((unit) => {
     const matchesSearch = unit.unitNumber.toLowerCase().includes(searchQuery.toLowerCase())

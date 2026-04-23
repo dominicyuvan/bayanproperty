@@ -86,9 +86,30 @@ export interface User {
   updatedAt: Date
 }
 
+/** Lease roster entry (dashboard-managed; optional `userId` when linked to Auth) */
+export type TenantLeaseStatus = 'active' | 'expired' | 'pending'
+
+export interface TenantRecord {
+  id: string
+  nameEn: string
+  nameAr: string
+  email: string
+  phone: string
+  /** Display label for occupied unit (e.g. A-101) */
+  unitNumber: string
+  leaseStatus: TenantLeaseStatus
+  userId?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
 // Property
 export interface Property {
   id: string
+  /** Business reference, e.g. BAY-MSC-2026-K7F2A */
+  code?: string
+  /** Land registry / cadastral plot reference */
+  plotNumber?: string
   nameEn: string
   nameAr: string
   type: PropertyType
@@ -110,6 +131,8 @@ export interface Unit {
   id: string
   propertyId: string
   unitNumber: string
+  /** Municipality-registered unit identifier (e.g. Baladiya unit ref) */
+  municipalityUnitNumber?: string
   type: UnitType
   floor: number
   bedrooms: number
@@ -135,8 +158,12 @@ export interface Association {
   propertyIds: string[]
   chairpersonId?: string
   memberIds: string[]
-  annualBudget: number // OMR
-  meetingSchedule?: string
+  /** Total sellable area used for fee basis (m²) */
+  sellableAreaSquareMeters: number
+  /** Annual association fee rate (OMR per m²) */
+  annualFeePerSquareMeterOmr: number
+  /** Annual fee = sellableAreaSquareMeters × annualFeePerSquareMeterOmr (OMR) */
+  annualBudget: number
   contactEmail?: string
   contactPhone?: string // +968 format
   createdAt: Date

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { 
   Building2, 
@@ -41,7 +42,10 @@ const recentActivities: Array<{
 
 export function DashboardContent() {
   const t = useTranslations('dashboard')
-  const tCommon = useTranslations('common')
+  const tProperties = useTranslations('properties')
+  const tUnits = useTranslations('units')
+  const tTenants = useTranslations('tenants')
+  const tPayments = useTranslations('payments')
   const { user } = useAuth()
   const { locale } = useLocale()
 
@@ -174,21 +178,29 @@ export function DashboardContent() {
             <CardTitle>{t('quickActions')}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2 sm:grid-cols-2">
-            <Button variant="outline" className="justify-start">
-              <Building2 className="me-2 h-4 w-4" />
-              Add Property
+            <Button variant="outline" className="h-auto w-full justify-start py-3" asChild>
+              <Link href="/dashboard/properties?add=1">
+                <Building2 className="me-2 h-4 w-4 shrink-0" />
+                {tProperties('addProperty')}
+              </Link>
             </Button>
-            <Button variant="outline" className="justify-start">
-              <Home className="me-2 h-4 w-4" />
-              Add Unit
+            <Button variant="outline" className="h-auto w-full justify-start py-3" asChild>
+              <Link href="/dashboard/units?add=1">
+                <Home className="me-2 h-4 w-4 shrink-0" />
+                {tUnits('addUnit')}
+              </Link>
             </Button>
-            <Button variant="outline" className="justify-start">
-              <Users className="me-2 h-4 w-4" />
-              Add Tenant
+            <Button variant="outline" className="h-auto w-full justify-start py-3" asChild>
+              <Link href="/dashboard/tenants?add=1">
+                <Users className="me-2 h-4 w-4 shrink-0" />
+                {tTenants('addTenant')}
+              </Link>
             </Button>
-            <Button variant="outline" className="justify-start">
-              <CreditCard className="me-2 h-4 w-4" />
-              Record Payment
+            <Button variant="outline" className="h-auto w-full justify-start py-3" asChild>
+              <Link href="/dashboard/payments?add=1">
+                <CreditCard className="me-2 h-4 w-4 shrink-0" />
+                {tPayments('addPayment')}
+              </Link>
             </Button>
           </CardContent>
         </Card>
