@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -21,7 +21,17 @@ import { useAuth } from '@/contexts/auth-context'
 import { db, isFirebaseConfigured } from '@/lib/firebase'
 import { createUnitRecord } from '@/lib/units-db'
 import { subscribeProperties } from '@/lib/properties-db'
-import { UNIT_TYPES, type Property } from '@/lib/types'
+import {
+  getBathroomsInputMin,
+  getBedroomsInputMin,
+  getDefaultBathroomsForType,
+  getDefaultBedroomsForType,
+  isCommercialUnitType,
+  isResidentialBedroomUnitType,
+  isStudioUnitType,
+  shouldShowBedroomsField,
+} from '@/lib/unitTypeConfig'
+import { UNIT_TYPES, type Property, type UnitType } from '@/lib/types'
 
 interface UnitFormProps {
   onSuccess?: () => void
@@ -52,6 +62,21 @@ const unitTypeEnum = z.enum([
 
 const unitStatusEnum = z.enum(['vacant', 'occupied', 'maintenance', 'reserved'])
 
+function buildDefaultValues(partial: Partial<UnitFormData> | undefined): UnitFormData {
+  const type = (partial?.type ?? 'apartment') as UnitType
+  return {
+    propertyId: partial?.propertyId ?? '',
+    unitNumber: partial?.unitNumber ?? '',
+    type,
+    floor: partial?.floor ?? 0,
+    bedrooms: partial?.bedrooms ?? getDefaultBedroomsForType(type),
+    bathrooms: partial?.bathrooms ?? getDefaultBathroomsForType(type),
+    areaSquareMeters: partial?.areaSquareMeters ?? 1,
+    monthlyRent: partial?.monthlyRent ?? 0,
+    status: (partial?.status ?? 'vacant') as UnitFormData['status'],
+  }
+}
+
 export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
   const t = useTranslations('units')
   const tCommon = useTranslations('common')
@@ -61,17 +86,63 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
 
   const unitSchema = useMemo(
     () =>
-      z.object({
-        propertyId: z.string().min(1, t('selectPropertyError')),
-        unitNumber: z.string().min(1, t('unitNumberRequired')),
-        type: unitTypeEnum,
-        floor: z.coerce.number().int().min(0, t('floorMin')),
-        bedrooms: z.number().min(0, t('bedroomsMin')),
-        bathrooms: z.number().min(1, t('bathroomsMin')),
-        areaSquareMeters: z.number().min(1, t('areaMin')),
-        monthlyRent: z.number().min(0, t('rentMin')),
-        status: unitStatusEnum,
-      }),
+      z
+        .object({
+          propertyId: z.string().min(1, t('selectPropertyError')),
+          unitNumber: z.string().min(1, t('unitNumberRequired')),
+          type: unitTypeEnum,
+          floor: z.coerce.number().int().min(0, t('floorMin')),
+          bedrooms: z.coerce.number(),
+          bathrooms: z.coerce.number(),
+          areaSquareMeters: z.number().min(1, t('areaMin')),
+          monthlyRent: z.number().min(0, t('rentMin')),
+          status: unitStatusEnum,
+        })
+        .superRefine((data, ctx) => {
+          if (isCommercialUnitType(data.type)) {
+            if (data.bathrooms < 0) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['bathrooms'],
+                message: t('bathroomsMinCommercial'),
+              })
+            }
+            return
+          }
+          if (isStudioUnitType(data.type)) {
+            if (data.bedrooms !== 0) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['bedrooms'],
+                message: t('bedroomsStudioFixed'),
+              })
+            }
+            if (data.bathrooms < 1) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['bathrooms'],
+                message: t('bathroomsMin'),
+              })
+            }
+            return
+          }
+          if (isResidentialBedroomUnitType(data.type)) {
+            if (data.bedrooms < 1) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['bedrooms'],
+                message: t('bedroomsMinResidential'),
+              })
+            }
+            if (data.bathrooms < 1) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['bathrooms'],
+                message: t('bathroomsMin'),
+              })
+            }
+          }
+        }),
     [t],
   )
 
@@ -84,23 +155,39 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
   }, [])
 
   const {
+    control,
     register,
     handleSubmit,
     setValue,
     watch,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<UnitFormData>({
     resolver: zodResolver(unitSchema),
-    defaultValues: {
-      propertyId: '',
-      type: 'apartment',
-      status: 'vacant',
-      floor: 0,
-      bedrooms: 1,
-      bathrooms: 1,
-      ...initialData,
-    },
+    defaultValues: buildDefaultValues(initialData),
   })
+
+  const unitType = useWatch({ control, name: 'type' })
+  const showBedrooms = shouldShowBedroomsField(unitType as UnitType)
+  const bathMin = getBathroomsInputMin(unitType as UnitType)
+  const bedInputMin = getBedroomsInputMin(unitType as UnitType)
+  const bedroomResetSkipRef = useRef(true)
+
+  useEffect(() => {
+    if (bedroomResetSkipRef.current) {
+      bedroomResetSkipRef.current = false
+      return
+    }
+    setValue('bedrooms', getDefaultBedroomsForType(unitType as UnitType), {
+      shouldValidate: true,
+      shouldDirty: true,
+    })
+    setValue('bathrooms', getDefaultBathroomsForType(unitType as UnitType), {
+      shouldValidate: true,
+      shouldDirty: true,
+    })
+    void trigger(['bedrooms', 'bathrooms'])
+  }, [unitType, setValue, trigger])
 
   const onSubmit = async (data: UnitFormData) => {
     if (!user) {
@@ -116,6 +203,9 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
       return
     }
 
+    const bdrm =
+      isCommercialUnitType(data.type) || isStudioUnitType(data.type) ? 0 : data.bedrooms
+
     const SAVE_TIMEOUT_MS = 45_000
     try {
       const savePromise = createUnitRecord({
@@ -123,7 +213,7 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
         unitNumber: data.unitNumber,
         type: data.type,
         floor: data.floor,
-        bedrooms: data.bedrooms,
+        bedrooms: bdrm,
         bathrooms: data.bathrooms,
         areaSquareMeters: data.areaSquareMeters,
         monthlyRent: data.monthlyRent,
@@ -184,9 +274,7 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
           {errors.propertyId && (
             <p className="text-sm text-destructive">{errors.propertyId.message}</p>
           )}
-          {noProperties && (
-            <p className="text-sm text-muted-foreground">{t('addPropertyFirst')}</p>
-          )}
+          {noProperties && <p className="text-sm text-muted-foreground">{t('addPropertyFirst')}</p>}
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -221,7 +309,9 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
             <FieldLabel htmlFor="type">{t('unitType')}</FieldLabel>
             <Select
               value={watch('type')}
-              onValueChange={(value) => setValue('type', value as UnitFormData['type'])}
+              onValueChange={(value) => {
+                setValue('type', value as UnitFormData['type'], { shouldValidate: true })
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t('unitType')} />
@@ -237,27 +327,40 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="bedrooms">{t('bedrooms')}</FieldLabel>
-            <Input
-              id="bedrooms"
-              type="number"
-              min={0}
-              {...register('bedrooms', { valueAsNumber: true })}
-              className={errors.bedrooms ? 'border-destructive' : ''}
-            />
-          </Field>
+        <div
+          className={
+            showBedrooms ? 'grid gap-4 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-1 sm:max-w-xs'
+          }
+        >
+          {showBedrooms && (
+            <Field>
+              <FieldLabel htmlFor="bedrooms">{t('bedrooms')}</FieldLabel>
+              <Input
+                id="bedrooms"
+                type="number"
+                min={bedInputMin}
+                {...register('bedrooms', { valueAsNumber: true })}
+                className={errors.bedrooms ? 'border-destructive' : ''}
+              />
+              {errors.bedrooms && (
+                <p className="text-sm text-destructive">{errors.bedrooms.message}</p>
+              )}
+            </Field>
+          )}
 
           <Field>
             <FieldLabel htmlFor="bathrooms">{t('bathrooms')}</FieldLabel>
             <Input
               id="bathrooms"
               type="number"
-              min={1}
+              min={bathMin}
+              step={1}
               {...register('bathrooms', { valueAsNumber: true })}
               className={errors.bathrooms ? 'border-destructive' : ''}
             />
+            {errors.bathrooms && (
+              <p className="text-sm text-destructive">{errors.bathrooms.message}</p>
+            )}
           </Field>
         </div>
 
