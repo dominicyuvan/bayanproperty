@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -17,44 +17,82 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
-import { UNIT_TYPES } from '@/lib/types'
-
-const unitSchema = z.object({
-  propertyId: z.string().min(1, 'Please select a property'),
-  unitNumber: z.string().min(1, 'Unit number is required'),
-  type: z.enum(['apartment', 'studio', 'penthouse', 'office', 'shop', 'warehouse', 'villa']),
-  floor: z.coerce.number().int().min(0, 'Floor must be 0 or higher'),
-  bedrooms: z.number().min(0, 'Bedrooms must be 0 or higher'),
-  bathrooms: z.number().min(1, 'Must have at least 1 bathroom'),
-  areaSquareMeters: z.number().min(1, 'Area must be greater than 0'),
-  monthlyRent: z.number().min(0, 'Rent must be 0 or higher'),
-  status: z.enum(['vacant', 'occupied', 'maintenance', 'reserved']),
-})
-
-type UnitFormData = z.infer<typeof unitSchema>
-
-const demoProperties: Array<{ id: string; nameEn: string; nameAr: string }> = []
+import { useAuth } from '@/contexts/auth-context'
+import { db, isFirebaseConfigured } from '@/lib/firebase'
+import { createUnitRecord } from '@/lib/units-db'
+import { subscribeProperties } from '@/lib/properties-db'
+import { UNIT_TYPES, type Property } from '@/lib/types'
 
 interface UnitFormProps {
   onSuccess?: () => void
   initialData?: Partial<UnitFormData>
 }
 
+type UnitFormData = {
+  propertyId: string
+  unitNumber: string
+  type: z.infer<typeof unitTypeEnum>
+  floor: number
+  bedrooms: number
+  bathrooms: number
+  areaSquareMeters: number
+  monthlyRent: number
+  status: z.infer<typeof unitStatusEnum>
+}
+
+const unitTypeEnum = z.enum([
+  'apartment',
+  'studio',
+  'penthouse',
+  'office',
+  'shop',
+  'warehouse',
+  'villa',
+])
+
+const unitStatusEnum = z.enum(['vacant', 'occupied', 'maintenance', 'reserved'])
+
 export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
   const t = useTranslations('units')
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
-  const [isLoading, setIsLoading] = useState(false)
+  const { user } = useAuth()
+  const [properties, setProperties] = useState<Property[]>([])
+
+  const unitSchema = useMemo(
+    () =>
+      z.object({
+        propertyId: z.string().min(1, t('selectPropertyError')),
+        unitNumber: z.string().min(1, t('unitNumberRequired')),
+        type: unitTypeEnum,
+        floor: z.coerce.number().int().min(0, t('floorMin')),
+        bedrooms: z.number().min(0, t('bedroomsMin')),
+        bathrooms: z.number().min(1, t('bathroomsMin')),
+        areaSquareMeters: z.number().min(1, t('areaMin')),
+        monthlyRent: z.number().min(0, t('rentMin')),
+        status: unitStatusEnum,
+      }),
+    [t],
+  )
+
+  useEffect(() => {
+    const unsubscribe = subscribeProperties(
+      (rows) => setProperties(rows),
+      (err) => console.error(err),
+    )
+    return () => unsubscribe()
+  }, [])
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<UnitFormData>({
     resolver: zodResolver(unitSchema),
     defaultValues: {
+      propertyId: '',
       type: 'apartment',
       status: 'vacant',
       floor: 0,
@@ -65,33 +103,78 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
   })
 
   const onSubmit = async (data: UnitFormData) => {
-    setIsLoading(true)
+    if (!user) {
+      toast.error(tErrors('unauthorized'))
+      return
+    }
+    if (!isFirebaseConfigured || !db) {
+      toast.error(tErrors('databaseUnavailable'))
+      return
+    }
+    if (properties.length === 0) {
+      toast.error(t('addPropertyFirst'))
+      return
+    }
+
+    const SAVE_TIMEOUT_MS = 45_000
     try {
-      // TODO: Save to Firebase
-      console.log('Unit data:', data)
-      toast.success('Unit saved successfully')
+      const savePromise = createUnitRecord({
+        propertyId: data.propertyId,
+        unitNumber: data.unitNumber,
+        type: data.type,
+        floor: data.floor,
+        bedrooms: data.bedrooms,
+        bathrooms: data.bathrooms,
+        areaSquareMeters: data.areaSquareMeters,
+        monthlyRent: data.monthlyRent,
+        status: data.status,
+      })
+      let saveTimeoutId: ReturnType<typeof setTimeout> | undefined
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        saveTimeoutId = setTimeout(() => {
+          reject(Object.assign(new Error('Save timed out'), { code: 'save-timeout' }))
+        }, SAVE_TIMEOUT_MS)
+      })
+      try {
+        await Promise.race([savePromise, timeoutPromise])
+      } finally {
+        if (saveTimeoutId !== undefined) clearTimeout(saveTimeoutId)
+      }
+      toast.success(t('unitSaved'))
       onSuccess?.()
-    } catch (error) {
-      toast.error(tErrors('somethingWentWrong'))
-    } finally {
-      setIsLoading(false)
+    } catch (error: unknown) {
+      console.error(error)
+      const code =
+        error && typeof error === 'object' && 'code' in error
+          ? String((error as { code: string }).code)
+          : ''
+      if (code === 'permission-denied') {
+        toast.error(tErrors('firestorePermissionDenied'))
+      } else if (code === 'save-timeout') {
+        toast.error(tErrors('saveTimedOut'))
+      } else {
+        toast.error(tErrors('somethingWentWrong'))
+      }
     }
   }
+
+  const noProperties = properties.length === 0
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="propertyId">Property</FieldLabel>
+          <FieldLabel htmlFor="propertyId">{t('linkedProperty')}</FieldLabel>
           <Select
-            value={watch('propertyId')}
-            onValueChange={(value) => setValue('propertyId', value)}
+            value={watch('propertyId') || undefined}
+            onValueChange={(value) => setValue('propertyId', value, { shouldValidate: true })}
+            disabled={noProperties}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Select property" />
+            <SelectTrigger id="propertyId" className={errors.propertyId ? 'border-destructive' : ''}>
+              <SelectValue placeholder={t('selectPropertyPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              {demoProperties.map((property) => (
+              {properties.map((property) => (
                 <SelectItem key={property.id} value={property.id}>
                   {property.nameEn}
                 </SelectItem>
@@ -100,6 +183,9 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
           </Select>
           {errors.propertyId && (
             <p className="text-sm text-destructive">{errors.propertyId.message}</p>
+          )}
+          {noProperties && (
+            <p className="text-sm text-muted-foreground">{t('addPropertyFirst')}</p>
           )}
         </Field>
 
@@ -186,6 +272,9 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
               {...register('areaSquareMeters', { valueAsNumber: true })}
               className={errors.areaSquareMeters ? 'border-destructive' : ''}
             />
+            {errors.areaSquareMeters && (
+              <p className="text-sm text-destructive">{errors.areaSquareMeters.message}</p>
+            )}
           </Field>
 
           <Field>
@@ -199,6 +288,9 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
               {...register('monthlyRent', { valueAsNumber: true })}
               className={errors.monthlyRent ? 'border-destructive' : ''}
             />
+            {errors.monthlyRent && (
+              <p className="text-sm text-destructive">{errors.monthlyRent.message}</p>
+            )}
           </Field>
         </div>
 
@@ -222,8 +314,8 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
       </FieldGroup>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? <Spinner size="sm" className="me-2" /> : null}
+        <Button type="submit" disabled={isSubmitting || noProperties}>
+          {isSubmitting ? <Spinner size="sm" className="me-2" /> : null}
           {tCommon('save')}
         </Button>
       </div>

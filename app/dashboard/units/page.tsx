@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Search, Home, MoreHorizontal, Pencil, Trash2, Eye, User, Bed, Bath, Square, Layers } from 'lucide-react'
+import { Plus, Search, Home, MoreHorizontal, Pencil, Trash2, Eye, Bed, Bath, Square, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -37,24 +37,10 @@ import {
 } from '@/components/ui/dialog'
 import { UnitForm } from '@/components/units/unit-form'
 import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
-import { formatOMR, type UnitStatus, type UnitType } from '@/lib/types'
-
-const demoUnits: Array<{
-  id: string
-  propertyId: string
-  propertyNameEn: string
-  propertyNameAr: string
-  unitNumber: string
-  type: UnitType
-  floor: number
-  bedrooms: number
-  bathrooms: number
-  areaSquareMeters: number
-  monthlyRent: number
-  status: UnitStatus
-  tenantNameEn?: string
-  tenantNameAr?: string
-}> = []
+import { subscribeProperties } from '@/lib/properties-db'
+import { subscribeUnits } from '@/lib/units-db'
+import { formatOMR, type Property, type Unit, type UnitStatus } from '@/lib/types'
+import { toast } from 'sonner'
 
 const statusStyles: Record<UnitStatus, { variant: 'default' | 'secondary' | 'destructive' | 'outline', className: string }> = {
   vacant: { variant: 'secondary', className: 'bg-green-100 text-green-700 hover:bg-green-100' },
@@ -63,19 +49,69 @@ const statusStyles: Record<UnitStatus, { variant: 'default' | 'secondary' | 'des
   reserved: { variant: 'outline', className: 'border-blue-500 text-blue-700' },
 }
 
+type UnitListRow = Unit & { propertyNameEn: string }
+
 export default function UnitsPage() {
   const t = useTranslations('units')
   const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  useOpenAddDialogFromQuery(setIsAddDialogOpen)
+  const [unitFormKey, setUnitFormKey] = useState(0)
+  const [units, setUnits] = useState<Unit[]>([])
+  const [properties, setProperties] = useState<Property[]>([])
+  const listErrorShown = useRef(false)
 
-  const filteredUnits = demoUnits.filter((unit) => {
+  useOpenAddDialogFromQuery(setIsAddDialogOpen, () => setUnitFormKey((k) => k + 1))
+
+  useEffect(() => {
+    listErrorShown.current = false
+    const onListError = (err: Error) => {
+      console.error(err)
+      if (!listErrorShown.current) {
+        listErrorShown.current = true
+        const code =
+          err && typeof err === 'object' && 'code' in err
+            ? String((err as { code: string }).code)
+            : ''
+        if (code === 'permission-denied') {
+          toast.error(tErrors('firestorePermissionDenied'))
+        } else {
+          toast.error(tErrors('somethingWentWrong'))
+        }
+      }
+    }
+    const unsubUnits = subscribeUnits((rows) => setUnits(rows), onListError)
+    const unsubProps = subscribeProperties((rows) => setProperties(rows), onListError)
+    return () => {
+      unsubUnits()
+      unsubProps()
+    }
+  }, [tErrors])
+
+  const propertyNameById = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const p of properties) m.set(p.id, p.nameEn)
+    return m
+  }, [properties])
+
+  const listRows: UnitListRow[] = useMemo(
+    () =>
+      units.map((u) => ({
+        ...u,
+        propertyNameEn: propertyNameById.get(u.propertyId) ?? u.propertyId,
+      })),
+    [units, propertyNameById],
+  )
+
+  const filteredUnits = listRows.filter((unit) => {
     const q = searchQuery.toLowerCase()
     const matchesSearch =
-      unit.unitNumber.toLowerCase().includes(q) || String(unit.floor).includes(q)
+      unit.unitNumber.toLowerCase().includes(q) ||
+      String(unit.floor).includes(q) ||
+      unit.propertyNameEn.toLowerCase().includes(q)
     const matchesStatus = statusFilter === 'all' || unit.status === statusFilter
     const matchesType = typeFilter === 'all' || unit.type === typeFilter
     return matchesSearch && matchesStatus && matchesType
@@ -88,10 +124,16 @@ export default function UnitsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground">
-            {demoUnits.length} {t('title').toLowerCase()}
+            {listRows.length} {t('title').toLowerCase()}
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog
+          open={isAddDialogOpen}
+          onOpenChange={(open) => {
+            setIsAddDialogOpen(open)
+            if (open) setUnitFormKey((k) => k + 1)
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="me-2 h-4 w-4" />
@@ -105,7 +147,7 @@ export default function UnitsPage() {
                 Add a new unit to a property
               </DialogDescription>
             </DialogHeader>
-            <UnitForm onSuccess={() => setIsAddDialogOpen(false)} />
+            <UnitForm key={unitFormKey} onSuccess={() => setIsAddDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
@@ -169,7 +211,6 @@ export default function UnitsPage() {
           <TableBody>
             {filteredUnits.map((unit) => {
               const propertyName = unit.propertyNameEn
-              const tenantName = unit.tenantNameEn
               const style = statusStyles[unit.status]
 
               return (
@@ -221,14 +262,7 @@ export default function UnitsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell min-w-0 max-w-[11rem]">
-                    {tenantName ? (
-                      <div className="flex min-w-0 items-center gap-2">
-                        <User className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span className="truncate text-sm">{tenantName}</span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
+                    <span className="text-muted-foreground">—</span>
                   </TableCell>
                   <TableCell className="w-12 text-end">
                     <DropdownMenu>

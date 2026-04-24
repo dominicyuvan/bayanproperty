@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,7 +8,6 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
 import {
   Select,
@@ -25,13 +24,11 @@ import { MUSCAT_DISTRICT_KEYS, MUSCAT_DISTRICT_SET } from '@/lib/muscat-district
 import { OMAN_GOVERNORATES, PROPERTY_TYPES, type OmanGovernorate } from '@/lib/types'
 
 type PropertyFormData = {
-  code: string
   plotNumber: string
   nameEn: string
   type: (typeof PROPERTY_TYPES)[number]
   governorate: string
   city: string
-  addressEn: string
   totalUnits: number
   amenities?: string
 }
@@ -44,17 +41,14 @@ interface PropertyFormProps {
 export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
   const t = useTranslations('properties')
   const tCommon = useTranslations('common')
-  const tForms = useTranslations('forms')
   const tGov = useTranslations('governorates')
   const tErrors = useTranslations('errors')
   const { user } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
 
   const propertySchema = useMemo(
     () =>
       z
         .object({
-          code: z.string().max(80),
           plotNumber: z.string().max(80),
           nameEn: z.string().min(2, tErrors('minLength', { min: 2 })),
           type: z.enum([
@@ -66,7 +60,6 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           ]),
           governorate: z.string().min(1, tErrors('required')),
           city: z.string().min(1, tErrors('required')),
-          addressEn: z.string().min(5, tErrors('minLength', { min: 5 })),
           totalUnits: z.coerce.number().min(1, tErrors('required')),
           amenities: z.string().optional(),
         })
@@ -95,17 +88,15 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
     handleSubmit,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
-      code: '',
       plotNumber: '',
       nameEn: '',
       type: 'residential_building',
       governorate: '',
       city: '',
-      addressEn: '',
       totalUnits: 1,
       amenities: '',
       ...initialData,
@@ -124,10 +115,8 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
       return
     }
 
-    setIsLoading(true)
     const SAVE_TIMEOUT_MS = 45_000
     const name = data.nameEn.trim()
-    const address = data.addressEn.trim()
     try {
       const amenities =
         data.amenities
@@ -135,17 +124,15 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           .map((s) => s.trim())
           .filter(Boolean) ?? []
       const plot = data.plotNumber?.trim()
-      const codeTrim = data.code?.trim()
       const savePromise = createPropertyRecord({
-        ...(codeTrim ? { code: codeTrim } : {}),
         ...(plot ? { plotNumber: plot } : {}),
         nameEn: name,
         nameAr: name,
         type: data.type,
         governorate: data.governorate as OmanGovernorate,
         city: data.city.trim(),
-        addressEn: address,
-        addressAr: address,
+        addressEn: '',
+        addressAr: '',
         totalUnits: data.totalUnits,
         amenities,
         managerId: user.id,
@@ -176,27 +163,12 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
       } else {
         toast.error(tErrors('somethingWentWrong'))
       }
-    } finally {
-      setIsLoading(false)
     }
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="code">{tForms('propertyCode')}</FieldLabel>
-          <p className="text-xs text-muted-foreground">{tForms('propertyCodeHelp')}</p>
-          <Input
-            id="code"
-            placeholder="e.g. PROP-001"
-            autoComplete="off"
-            {...register('code')}
-            className={errors.code ? 'border-destructive' : ''}
-          />
-          {errors.code && <p className="text-sm text-destructive">{errors.code.message}</p>}
-        </Field>
-
         <Field>
           <FieldLabel htmlFor="nameEn">{t('propertyName')}</FieldLabel>
           <Input
@@ -306,20 +278,6 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
         </div>
 
         <Field>
-          <FieldLabel htmlFor="addressEn">{tCommon('address')}</FieldLabel>
-          <Textarea
-            id="addressEn"
-            placeholder="Full address"
-            rows={3}
-            {...register('addressEn')}
-            className={errors.addressEn ? 'border-destructive' : ''}
-          />
-          {errors.addressEn && (
-            <p className="text-sm text-destructive">{errors.addressEn.message}</p>
-          )}
-        </Field>
-
-        <Field>
           <FieldLabel htmlFor="totalUnits">{t('totalUnits')}</FieldLabel>
           <Input
             id="totalUnits"
@@ -346,8 +304,8 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
       </FieldGroup>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? <Spinner size="sm" className="me-2" /> : null}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? <Spinner size="sm" className="me-2" /> : null}
           {tCommon('save')}
         </Button>
       </div>

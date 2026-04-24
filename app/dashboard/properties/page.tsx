@@ -46,7 +46,6 @@ export default function PropertiesPage() {
   const t = useTranslations('properties')
   const tCommon = useTranslations('common')
   const tGov = useTranslations('governorates')
-  const tForms = useTranslations('forms')
   const tErrors = useTranslations('errors')
   /** Muscat district keys are dynamic; next-intl keys are under `muscatDistricts.*`. */
   const tProps = t as (key: string) => string
@@ -87,17 +86,13 @@ export default function PropertiesPage() {
 
   const filteredProperties = properties.filter((property) => {
     const name = property.nameEn
-    const address = property.addressEn
     const cityDisplay = muscatCityLabel(property.governorate, property.city)
     const q = searchQuery.toLowerCase()
     const matchesSearch =
       name.toLowerCase().includes(q) ||
       property.nameAr.toLowerCase().includes(q) ||
-      address.toLowerCase().includes(q) ||
-      property.addressAr.toLowerCase().includes(q) ||
       property.city.toLowerCase().includes(q) ||
       cityDisplay.toLowerCase().includes(q) ||
-      (property.code?.toLowerCase().includes(q) ?? false) ||
       (property.plotNumber?.toLowerCase().includes(q) ?? false)
     const matchesGovernorate = governorateFilter === 'all' || property.governorate === governorateFilter
     const matchesType = typeFilter === 'all' || property.type === typeFilter
@@ -182,7 +177,6 @@ export default function PropertiesPage() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[7.5rem] min-w-[7rem]">{tForms('propertyCode')}</TableHead>
               <TableHead className="min-w-[10rem] max-w-[14rem]">{t('propertyName')}</TableHead>
               <TableHead className="hidden lg:table-cell w-[6.5rem]">{t('plotNumber')}</TableHead>
               <TableHead className="hidden md:table-cell">{t('propertyType')}</TableHead>
@@ -197,7 +191,6 @@ export default function PropertiesPage() {
           <TableBody>
             {filteredProperties.map((property) => {
               const name = property.nameEn
-              const addressLine = property.addressEn
               const cityLabel = muscatCityLabel(property.governorate, property.city)
               const occupied = property.occupiedUnits ?? 0
               const total = Math.max(1, property.totalUnits)
@@ -205,11 +198,6 @@ export default function PropertiesPage() {
 
               return (
                 <TableRow key={property.id}>
-                  <TableCell className="align-middle">
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {property.code ?? '—'}
-                    </span>
-                  </TableCell>
                   <TableCell className="min-w-0 max-w-[14rem]">
                     <div className="flex items-start gap-2">
                       <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
@@ -220,9 +208,6 @@ export default function PropertiesPage() {
                         <p className="mt-0.5 flex items-start gap-1 truncate text-xs text-muted-foreground">
                           <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
                           <span className="truncate">{cityLabel}</span>
-                        </p>
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground xl:hidden">
-                          {addressLine}
                         </p>
                       </div>
                     </div>
