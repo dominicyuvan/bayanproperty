@@ -14,6 +14,18 @@ import { db, storage } from '@/lib/firebase'
 import type { UserUploadCategory, UserUploadRecord } from '@/lib/types'
 import { assertKycFile, mapUploadDoc } from '@/lib/user-uploads'
 
+export const ROSTER_PARTY_KYC_MAX_BYTES = 5 * 1024 * 1024
+const ROSTER_PARTY_KYC_TYPES = ['application/pdf', 'image/jpeg', 'image/png'] as const
+
+export function assertRosterPartyKyc5mb(file: File): void {
+  if (file.size > ROSTER_PARTY_KYC_MAX_BYTES) {
+    throw new Error('PARTY_KYC_TOO_LARGE')
+  }
+  if (!ROSTER_PARTY_KYC_TYPES.includes(file.type as (typeof ROSTER_PARTY_KYC_TYPES)[number])) {
+    throw new Error('PARTY_KYC_BAD_TYPE')
+  }
+}
+
 export type RosterEntity = 'tenants' | 'owners'
 
 function getStorageOrThrow(): FirebaseStorage {
@@ -60,7 +72,6 @@ export async function uploadRosterDocument(
   const bucket = getStorageOrThrow()
   const fs = getDb()
   assertKycFile(file)
-
   const path = `${entity}/${entityId}/documents/${category}_${Date.now()}_${safeFileSuffix(file.name)}`
   const storageRef = ref(bucket, path)
   await uploadBytes(storageRef, file, {
@@ -78,6 +89,38 @@ export async function uploadRosterDocument(
     sizeBytes: file.size,
     createdAt: serverTimestamp(),
   })
+}
+
+/**
+ * 5MB max, PDF + JPG + PNG. Writes uploads subdoc and returns URLs for the parent party record.
+ */
+export async function uploadRosterPartyKyc5mb(
+  entity: RosterEntity,
+  entityId: string,
+  category: UserUploadCategory,
+  file: File,
+): Promise<{ downloadUrl: string; storagePath: string; originalFileName: string }> {
+  const bucket = getStorageOrThrow()
+  const fs = getDb()
+  assertRosterPartyKyc5mb(file)
+  const path = `${entity}/${entityId}/documents/${category}_${Date.now()}_${safeFileSuffix(file.name)}`
+  const storageRef = ref(bucket, path)
+  await uploadBytes(storageRef, file, {
+    contentType: file.type,
+    customMetadata: { category, entity, entityId },
+  })
+  const downloadUrl = await getDownloadURL(storageRef)
+
+  await addDoc(collection(fs, entity, entityId, 'uploads'), {
+    category,
+    originalFileName: file.name,
+    storagePath: path,
+    downloadUrl,
+    mimeType: file.type,
+    sizeBytes: file.size,
+    createdAt: serverTimestamp(),
+  })
+  return { downloadUrl, storagePath: path, originalFileName: file.name }
 }
 
 export async function deleteRosterUpload(

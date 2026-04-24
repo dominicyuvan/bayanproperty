@@ -43,12 +43,17 @@ import {
 } from '@/components/ui/dialog'
 import { OwnerForm } from '@/components/owners/owner-form'
 import { RosterDocumentsPanel } from '@/components/roster/roster-documents-panel'
+import { ExpiryStatusDot } from '@/components/party/expiry-status-dot'
+import { Badge } from '@/components/ui/badge'
 import { subscribeOwnerRecords } from '@/lib/owners-db'
+import { getExpiryUrgency } from '@/lib/expiry-urgency'
+import { getPrimaryExpiryForParty } from '@/lib/party-display'
 import type { OwnerRecord } from '@/lib/types'
 
 export default function OwnersPage() {
   const t = useTranslations('owners')
   const tCommon = useTranslations('common')
+  const tParty = useTranslations('party')
   const tErrors = useTranslations('errors')
   const [owners, setOwners] = useState<OwnerRecord[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -83,13 +88,18 @@ export default function OwnersPage() {
   const filtered = owners.filter((row) => {
     const name = row.nameEn.toLowerCase()
     const q = searchQuery.toLowerCase()
+    const idBits = [row.idNumber, row.crNumber, row.contactPersonName]
+      .filter(Boolean)
+      .map((s) => String(s).toLowerCase())
     return (
       name.includes(q) ||
       row.nameAr.toLowerCase().includes(q) ||
       row.email.toLowerCase().includes(q) ||
       row.phone.toLowerCase().includes(q) ||
       String(row.propertyCount).includes(q) ||
-      String(row.unitCount).includes(q)
+      String(row.unitCount).includes(q) ||
+      idBits.some((s) => s.includes(q)) ||
+      row.partyType.toLowerCase().includes(q)
     )
   })
 
@@ -115,7 +125,7 @@ export default function OwnersPage() {
               {t('addOwner')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{t('addOwner')}</DialogTitle>
               <DialogDescription>{t('addOwnerDescription')}</DialogDescription>
@@ -152,6 +162,8 @@ export default function OwnersPage() {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="min-w-[10rem] max-w-[14rem]">{tCommon('name')}</TableHead>
+              <TableHead className="w-[7.5rem]">{tParty('typeColumn')}</TableHead>
+              <TableHead className="w-[7rem]">{tParty('expiryColumn')}</TableHead>
               <TableHead className="hidden md:table-cell max-w-[14rem]">{tCommon('email')}</TableHead>
               <TableHead className="hidden lg:table-cell w-[9rem]">{tCommon('phone')}</TableHead>
               <TableHead className="text-center tabular-nums">
@@ -172,6 +184,8 @@ export default function OwnersPage() {
           <TableBody>
             {filtered.map((row) => {
               const name = row.nameEn
+              const exp = getPrimaryExpiryForParty(row)
+              const expU = getExpiryUrgency(exp)
 
               return (
                 <TableRow key={row.id}>
@@ -181,6 +195,19 @@ export default function OwnersPage() {
                         <UserCircle className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <span className="truncate font-medium">{name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-xs font-normal">
+                      {row.partyType === 'company' ? tParty('company') : tParty('individual')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <ExpiryStatusDot urgency={expU} title={exp ? exp.toLocaleDateString() : undefined} />
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {exp ? exp.toLocaleDateString() : '—'}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell min-w-0 max-w-[14rem]">

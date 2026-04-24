@@ -71,6 +71,8 @@ export function mapUploadDoc(id: string, data: Record<string, unknown>): UserUpl
   const categories: UserUploadCategory[] = [
     'national_id',
     'residence_visa',
+    'passport',
+    'cr_certificate',
     'lease_agreement',
     'proof_of_address',
     'other',

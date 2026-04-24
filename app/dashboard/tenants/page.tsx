@@ -31,8 +31,11 @@ import {
 } from '@/components/ui/dialog'
 import { TenantForm } from '@/components/tenants/tenant-form'
 import { RosterDocumentsPanel } from '@/components/roster/roster-documents-panel'
+import { ExpiryStatusDot } from '@/components/party/expiry-status-dot'
 import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
 import { subscribeTenantRecords } from '@/lib/tenants-db'
+import { getExpiryUrgency } from '@/lib/expiry-urgency'
+import { getPrimaryExpiryForParty } from '@/lib/party-display'
 import type { TenantLeaseStatus, TenantRecord } from '@/lib/types'
 
 const leaseBadge: Record<TenantLeaseStatus, { variant: 'default' | 'secondary' | 'outline' }> = {
@@ -44,6 +47,7 @@ const leaseBadge: Record<TenantLeaseStatus, { variant: 'default' | 'secondary' |
 export default function TenantsPage() {
   const t = useTranslations('tenants')
   const tCommon = useTranslations('common')
+  const tParty = useTranslations('party')
   const tErrors = useTranslations('errors')
   const [tenants, setTenants] = useState<TenantRecord[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -80,12 +84,17 @@ export default function TenantsPage() {
   const filtered = tenants.filter((row) => {
     const name = row.nameEn.toLowerCase()
     const q = searchQuery.toLowerCase()
+    const idBits = [row.idNumber, row.crNumber, row.contactPersonName]
+      .filter(Boolean)
+      .map((s) => String(s).toLowerCase())
     return (
       name.includes(q) ||
       row.nameAr.toLowerCase().includes(q) ||
       row.email.toLowerCase().includes(q) ||
       row.phone.toLowerCase().includes(q) ||
-      row.unitNumber.toLowerCase().includes(q)
+      row.unitNumber.toLowerCase().includes(q) ||
+      idBits.some((s) => s.includes(q)) ||
+      row.partyType.toLowerCase().includes(q)
     )
   })
 
@@ -148,6 +157,8 @@ export default function TenantsPage() {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="min-w-[10rem] max-w-[14rem]">{tCommon('name')}</TableHead>
+              <TableHead className="w-[7.5rem]">{tParty('typeColumn')}</TableHead>
+              <TableHead className="w-[7rem]">{tParty('expiryColumn')}</TableHead>
               <TableHead className="hidden md:table-cell max-w-[14rem]">{tCommon('email')}</TableHead>
               <TableHead className="hidden lg:table-cell w-[9rem]">{tCommon('phone')}</TableHead>
               <TableHead className="w-[7rem]">{t('currentUnit')}</TableHead>
@@ -159,6 +170,8 @@ export default function TenantsPage() {
             {filtered.map((row) => {
               const name = row.nameEn
               const lease = leaseBadge[row.leaseStatus]
+              const exp = getPrimaryExpiryForParty(row)
+              const expU = getExpiryUrgency(exp)
 
               return (
                 <TableRow key={row.id}>
@@ -168,6 +181,19 @@ export default function TenantsPage() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <span className="truncate font-medium">{name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-xs font-normal">
+                      {row.partyType === 'company' ? tParty('company') : tParty('individual')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <ExpiryStatusDot urgency={expU} title={exp ? exp.toLocaleDateString() : undefined} />
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {exp ? exp.toLocaleDateString() : '—'}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell min-w-0 max-w-[14rem]">

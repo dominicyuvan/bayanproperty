@@ -92,6 +92,8 @@ export interface User {
 export type UserUploadCategory =
   | 'national_id'
   | 'residence_visa'
+  | 'passport'
+  | 'cr_certificate'
   | 'lease_agreement'
   | 'proof_of_address'
   | 'other'
@@ -110,8 +112,15 @@ export interface UserUploadRecord {
 /** Lease roster entry (dashboard-managed; optional `userId` when linked to Auth) */
 export type TenantLeaseStatus = 'active' | 'expired' | 'pending'
 
+/** Individual vs company (Oman roster) */
+export type PartyType = 'individual' | 'company'
+
+/** Government ID / travel document (individual) */
+export type IndividualIdTypeOman = 'national_id' | 'residency' | 'passport'
+
 export interface TenantRecord {
   id: string
+  partyType: PartyType
   nameEn: string
   nameAr: string
   email: string
@@ -120,6 +129,23 @@ export interface TenantRecord {
   unitNumber: string
   leaseStatus: TenantLeaseStatus
   userId?: string
+  /** Individual-only */
+  nationality?: string
+  individualIdType?: IndividualIdTypeOman
+  idNumber?: string
+  idExpiryDate?: Date
+  idDocumentUrl?: string
+  idDocumentFileName?: string
+  idDocumentStoragePath?: string
+  /** Company-only */
+  crNumber?: string
+  crExpiryDate?: Date
+  contactPersonName?: string
+  contactPersonPhone?: string
+  crCertificateUrl?: string
+  crCertificateFileName?: string
+  crCertificateStoragePath?: string
+  iban?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -127,12 +153,28 @@ export interface TenantRecord {
 /** Owner roster entry (dashboard-managed) */
 export interface OwnerRecord {
   id: string
+  partyType: PartyType
   nameEn: string
   nameAr: string
   email: string
   phone: string
   propertyCount: number
   unitCount: number
+  nationality?: string
+  individualIdType?: IndividualIdTypeOman
+  idNumber?: string
+  idExpiryDate?: Date
+  idDocumentUrl?: string
+  idDocumentFileName?: string
+  idDocumentStoragePath?: string
+  crNumber?: string
+  crExpiryDate?: Date
+  contactPersonName?: string
+  contactPersonPhone?: string
+  crCertificateUrl?: string
+  crCertificateFileName?: string
+  crCertificateStoragePath?: string
+  iban?: string
   createdAt: Date
   updatedAt: Date
 }

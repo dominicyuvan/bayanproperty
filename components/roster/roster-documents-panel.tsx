@@ -41,6 +41,8 @@ import type { UserUploadCategory, UserUploadRecord } from '@/lib/types'
 const CATEGORIES: UserUploadCategory[] = [
   'national_id',
   'residence_visa',
+  'passport',
+  'cr_certificate',
   'lease_agreement',
   'proof_of_address',
   'other',
