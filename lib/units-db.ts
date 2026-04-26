@@ -1,6 +1,6 @@
 import { addDoc, collection, onSnapshot, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { UNIT_TYPES, type Unit, type UnitStatus, type UnitType } from '@/lib/types'
+import { UNIT_TYPES, type Unit, type UnitStatus, type UnitType, type UnitUsage } from '@/lib/types'
 
 const COLLECTION = 'units'
 
@@ -31,6 +31,15 @@ export function mapUnitDoc(id: string, data: Record<string, unknown>): Unit {
   return {
     id,
     propertyId: String(data.propertyId ?? ''),
+    unitCode: data.unitCode != null ? String(data.unitCode) : undefined,
+    isActive: data.isActive !== false,
+    nameEn: data.nameEn != null ? String(data.nameEn) : undefined,
+    nameAr: data.nameAr != null ? String(data.nameAr) : undefined,
+    descriptionEn: data.descriptionEn != null ? String(data.descriptionEn) : undefined,
+    descriptionAr: data.descriptionAr != null ? String(data.descriptionAr) : undefined,
+    usage: (['for_rent', 'for_sale'].includes(String(data.usage ?? ''))
+      ? (data.usage as UnitUsage)
+      : 'for_rent'),
     unitNumber: String(data.unitNumber ?? ''),
     type: parseUnitType(data.type),
     floor: Math.max(0, Math.floor(Number(data.floor) || 0)),
@@ -77,6 +86,13 @@ export function subscribeUnits(
 
 export type CreateUnitInput = {
   propertyId: string
+  unitCode?: string
+  isActive: boolean
+  nameEn?: string
+  nameAr?: string
+  descriptionEn?: string
+  descriptionAr?: string
+  usage?: UnitUsage
   unitNumber: string
   type: UnitType
   floor: number
@@ -89,7 +105,7 @@ export type CreateUnitInput = {
 
 export async function createUnitRecord(input: CreateUnitInput): Promise<string> {
   if (!db) throw new Error('Firestore not initialized')
-  const ref = await addDoc(collection(db, COLLECTION), {
+  const payload: Record<string, unknown> = {
     propertyId: input.propertyId.trim(),
     unitNumber: input.unitNumber.trim(),
     type: input.type,
@@ -103,6 +119,14 @@ export async function createUnitRecord(input: CreateUnitInput): Promise<string> 
     features: [],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  })
+  }
+  if (input.unitCode?.trim()) payload.unitCode = input.unitCode.trim()
+  payload.isActive = input.isActive !== false
+  if (input.nameEn?.trim()) payload.nameEn = input.nameEn.trim()
+  if (input.nameAr?.trim()) payload.nameAr = input.nameAr.trim()
+  if (input.descriptionEn?.trim()) payload.descriptionEn = input.descriptionEn.trim()
+  if (input.descriptionAr?.trim()) payload.descriptionAr = input.descriptionAr.trim()
+  payload.usage = input.usage ?? 'for_rent'
+  const ref = await addDoc(collection(db, COLLECTION), payload)
   return ref.id
 }

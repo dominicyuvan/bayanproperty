@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -18,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Spinner } from '@/components/ui/spinner'
 import { PartyDocumentUpload } from '@/components/party/party-document-upload'
 import { useAuth } from '@/contexts/auth-context'
@@ -27,12 +29,23 @@ import { assertRosterPartyKyc5mb, uploadRosterPartyKyc5mb } from '@/lib/roster-d
 import { getExpiryUrgency } from '@/lib/expiry-urgency'
 import { individualIdTypeToUploadCategory } from '@/lib/oman-party-categories'
 import { OMAN_NATIONALITY_OPTIONS } from '@/lib/oman-nationalities'
-import type { IndividualIdTypeOman, PartyType, TenantLeaseStatus } from '@/lib/types'
+import {
+  CONTACT_SALUTATIONS,
+  LEAD_SOURCES,
+  type ContactSalutation,
+  type IndividualIdTypeOman,
+  type LeadSource,
+  type PartyType,
+  type TenantLeaseStatus,
+} from '@/lib/types'
 
 const leaseStatuses: TenantLeaseStatus[] = ['active', 'expired', 'pending']
 
 type TenantFormData = {
   partyType: PartyType
+  salutation?: ContactSalutation
+  firstName?: string
+  lastName?: string
   nameEn: string
   nameAr: string
   nationality: string
@@ -41,12 +54,23 @@ type TenantFormData = {
   idExpiryDate: string
   email: string
   phone: string
+  mobile?: string
+  title?: string
   contactPersonName: string
   contactPersonPhone: string
   crNumber: string
   crExpiryDate: string
+  mailingStreet?: string
+  mailingCity?: string
+  mailingStateProvince?: string
+  mailingZip?: string
+  mailingCountry?: string
+  birthdate?: string
+  leadSource?: LeadSource
+  department?: string
   unitNumber: string
   leaseStatus: TenantLeaseStatus
+  description?: string
   iban: string
 }
 
@@ -109,6 +133,9 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
       z
         .object({
           partyType: z.enum(['individual', 'company']),
+          salutation: z.enum(['mr', 'mrs', 'ms', 'dr', 'prof', 'eng']).optional(),
+          firstName: z.string().max(80).optional(),
+          lastName: z.string().max(80).optional(),
           nameEn: z.string().min(2, tErrors('minLength', { min: 2 })),
           nameAr: z.string().min(2, tErrors('minLength', { min: 2 })),
           nationality: z.string(),
@@ -117,12 +144,23 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
           idExpiryDate: z.string(),
           email: z.string().email(tErrors('invalidEmail')),
           phone: z.string(),
+          mobile: z.string().optional(),
+          title: z.string().max(80).optional(),
           contactPersonName: z.string(),
           contactPersonPhone: z.string(),
           crNumber: z.string(),
           crExpiryDate: z.string(),
+          mailingStreet: z.string().max(200).optional(),
+          mailingCity: z.string().max(80).optional(),
+          mailingStateProvince: z.string().max(80).optional(),
+          mailingZip: z.string().max(20).optional(),
+          mailingCountry: z.string().max(80).optional(),
+          birthdate: z.string().optional(),
+          leadSource: z.enum(['referral', 'website', 'direct', 'agent', 'social_media', 'other']).optional(),
+          department: z.string().max(80).optional(),
           unitNumber: z.string().min(1, tErrors('required')).max(80),
           leaseStatus: z.enum(['active', 'expired', 'pending']),
+          description: z.string().max(1000).optional(),
           iban: z.string(),
         })
         .superRefine((data, ctx) => {
@@ -144,6 +182,9 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
               ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['contactPersonPhone'], message: tErrors('invalidPhone') })
             }
             return
+          }
+          if (!data.lastName?.trim()) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['lastName'], message: tErrors('required') })
           }
           if (!data.idNumber?.trim()) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['idNumber'], message: tParty('idNumberRequired') })
@@ -172,6 +213,9 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
           if (!PHONE_OM.test(data.phone.replace(/\s/g, ''))) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['phone'], message: tErrors('invalidPhone') })
           }
+          if (data.mobile?.trim() && !PHONE_OM.test(data.mobile.replace(/\s/g, ''))) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['mobile'], message: tErrors('invalidPhone') })
+          }
         }),
     [tErrors, tParty],
   )
@@ -187,6 +231,9 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
     resolver: zodResolver(schema),
     defaultValues: {
       partyType: 'individual',
+      salutation: undefined,
+      firstName: '',
+      lastName: '',
       nameEn: '',
       nameAr: '',
       nationality: 'OM',
@@ -195,17 +242,31 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
       idExpiryDate: '',
       email: '',
       phone: '',
+      mobile: '',
+      title: '',
       contactPersonName: '',
       contactPersonPhone: '',
       crNumber: '',
       crExpiryDate: '',
+      mailingStreet: '',
+      mailingCity: '',
+      mailingStateProvince: '',
+      mailingZip: '',
+      mailingCountry: 'Oman',
+      birthdate: '',
+      leadSource: undefined,
+      department: '',
       unitNumber: '',
       leaseStatus: 'pending',
+      description: '',
       iban: '',
     },
   })
 
   const partyType = useWatch({ control, name: 'partyType' })
+  const salutation = useWatch({ control, name: 'salutation' })
+  const firstName = useWatch({ control, name: 'firstName' })
+  const lastName = useWatch({ control, name: 'lastName' })
   const individualIdType = useWatch({ control, name: 'individualIdType' })
   const idExpiryDateW = useWatch({ control, name: 'idExpiryDate' })
   const crExpiryDateW = useWatch({ control, name: 'crExpiryDate' })
@@ -243,6 +304,26 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
   const idExpU = getExpiryUrgency(parseYmdToDate(idExpiryDateW))
   const crExpU = getExpiryUrgency(parseYmdToDate(crExpiryDateW))
 
+  useEffect(() => {
+    if (partyType !== 'individual') return
+    const salMap: Record<ContactSalutation, string> = {
+      mr: t('salutations.mr'),
+      mrs: t('salutations.mrs'),
+      ms: t('salutations.ms'),
+      dr: t('salutations.dr'),
+      prof: t('salutations.prof'),
+      eng: t('salutations.eng'),
+    }
+    const parts = [
+      salutation ? salMap[salutation] : '',
+      firstName?.trim() || '',
+      lastName?.trim() || '',
+    ].filter(Boolean)
+    if (parts.length > 0) {
+      setValue('nameEn', parts.join(' '), { shouldValidate: false })
+    }
+  }, [salutation, firstName, lastName, partyType, setValue, t])
+
   const onSubmit = async (data: TenantFormData) => {
     if (!user) {
       toast.error(tErrors('unauthorized'))
@@ -274,12 +355,28 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
         data.partyType === 'company'
           ? normalizeOmanPhone(data.contactPersonPhone)
           : normalizeOmanPhone(data.phone),
+      ...(data.mobile?.trim() ? { mobile: normalizeOmanPhone(data.mobile) } : {}),
+      ...(data.title?.trim() ? { title: data.title.trim() } : {}),
       unitNumber: data.unitNumber.trim(),
       leaseStatus: data.leaseStatus,
       iban: ibanT,
+      ...(data.mailingStreet?.trim() ? { mailingStreet: data.mailingStreet.trim() } : {}),
+      ...(data.mailingCity?.trim() ? { mailingCity: data.mailingCity.trim() } : {}),
+      ...(data.mailingStateProvince?.trim()
+        ? { mailingStateProvince: data.mailingStateProvince.trim() }
+        : {}),
+      ...(data.mailingZip?.trim() ? { mailingZip: data.mailingZip.trim() } : {}),
+      ...(data.mailingCountry?.trim() ? { mailingCountry: data.mailingCountry.trim() } : {}),
+      ...(data.birthdate ? { birthdate: new Date(data.birthdate) } : {}),
+      ...(data.leadSource ? { leadSource: data.leadSource } : {}),
+      ...(data.department?.trim() ? { department: data.department.trim() } : {}),
+      ...(data.description?.trim() ? { description: data.description.trim() } : {}),
     }
 
     if (data.partyType === 'individual') {
+      if (data.salutation) base.salutation = data.salutation
+      if (data.firstName?.trim()) base.firstName = data.firstName.trim()
+      if (data.lastName?.trim()) base.lastName = data.lastName.trim()
       base.nationality = data.nationality
       base.individualIdType = data.individualIdType
       base.idNumber = data.idNumber.trim()
@@ -364,19 +461,45 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
         </ToggleGroup>
       </div>
 
+      <ScrollArea className="max-h-[70vh] pe-2">
       <FieldGroup>
+        <h3 className="text-sm font-semibold tracking-wide">{t('sectionContactInfo')}</h3>
         {partyType === 'individual' ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field>
-                <FieldLabel htmlFor="tn-e">{tParty('fullNameEn')}</FieldLabel>
-                <Input id="tn-e" {...register('nameEn')} className={errors.nameEn ? 'border-destructive' : ''} />
-                {errors.nameEn && <p className="text-sm text-destructive">{errors.nameEn.message}</p>}
+                <FieldLabel htmlFor="salutation">{t('salutation')}</FieldLabel>
+                <Select
+                  value={watch('salutation') || undefined}
+                  onValueChange={(v) => setValue('salutation', v as ContactSalutation)}
+                >
+                  <SelectTrigger id="salutation">
+                    <SelectValue placeholder={t('salutation')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONTACT_SALUTATIONS.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {t(`salutations.${s}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
-                <FieldLabel htmlFor="tn-a">{tParty('fullNameAr')}</FieldLabel>
-                <Input id="tn-a" dir="rtl" {...register('nameAr')} className={errors.nameAr ? 'border-destructive' : ''} />
-                {errors.nameAr && <p className="text-sm text-destructive">{errors.nameAr.message}</p>}
+                <FieldLabel htmlFor="firstName">{t('firstName')}</FieldLabel>
+                <Input id="firstName" {...register('firstName')} className={errors.firstName ? 'border-destructive' : ''} />
+              </Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="lastName">{t('lastName')}</FieldLabel>
+                <Input id="lastName" {...register('lastName')} className={errors.lastName ? 'border-destructive' : ''} />
+                {errors.lastName ? <p className="text-sm text-destructive">{errors.lastName.message}</p> : null}
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="nameEn">{tParty('fullNameEn')}</FieldLabel>
+                <Input id="nameEn" {...register('nameEn')} className={errors.nameEn ? 'border-destructive' : ''} />
+                {errors.nameEn ? <p className="text-sm text-destructive">{errors.nameEn.message}</p> : null}
               </Field>
             </div>
             <Field>
@@ -439,16 +562,34 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field>
+                <FieldLabel htmlFor="nameAr">{tParty('fullNameAr')}</FieldLabel>
+                <Input id="nameAr" dir="rtl" {...register('nameAr')} className={errors.nameAr ? 'border-destructive' : ''} />
+                {errors.nameAr ? <p className="text-sm text-destructive">{errors.nameAr.message}</p> : null}
+              </Field>
+              <Field>
                 <FieldLabel htmlFor="tem">{tCommon('email')}</FieldLabel>
                 <Input id="tem" type="email" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
               </Field>
               <Field>
                 <FieldLabel htmlFor="tph">{tCommon('phone')} (+968)</FieldLabel>
-                <Input id="tph" placeholder="99123456" {...register('phone')} className={errors.phone ? 'border-destructive' : ''} />
+                <Input id="tph" {...register('phone')} className={errors.phone ? 'border-destructive' : ''} />
                 {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
               </Field>
+              <Field>
+                <FieldLabel htmlFor="mobile">{t('mobile')}</FieldLabel>
+                <Input id="mobile" {...register('mobile')} className={errors.mobile ? 'border-destructive' : ''} />
+                {errors.mobile ? <p className="text-sm text-destructive">{errors.mobile.message}</p> : null}
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="title">{t('jobTitle')}</FieldLabel>
+                <Input id="title" {...register('title')} />
+              </Field>
             </div>
+            <Field>
+              <FieldLabel htmlFor="birthdate">{t('birthdate')}</FieldLabel>
+              <Input id="birthdate" type="date" {...register('birthdate')} className="sm:max-w-xs" />
+            </Field>
             <PartyDocumentUpload
               label={tParty('uploadIdDocument')}
               emptyHint={tParty('uploadIdHint')}
@@ -508,7 +649,6 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
                 <FieldLabel htmlFor="tcpp">{tParty('contactPersonPhone')} (+968)</FieldLabel>
                 <Input
                   id="tcpp"
-                  placeholder="99123456"
                   {...register('contactPersonPhone')}
                   className={errors.contactPersonPhone ? 'border-destructive' : ''}
                 />
@@ -518,6 +658,10 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
               <FieldLabel htmlFor="tcem">{tCommon('email')}</FieldLabel>
               <Input id="tcem" type="email" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="title">{t('jobTitle')}</FieldLabel>
+              <Input id="title" {...register('title')} />
             </Field>
             <PartyDocumentUpload
               label={tParty('uploadCrCertificate')}
@@ -530,12 +674,61 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
           </>
         )}
 
+        <h3 className="text-sm font-semibold tracking-wide">{t('sectionAddressInfo')}</h3>
+        <Field>
+          <FieldLabel htmlFor="mailingStreet">{t('mailingStreet')}</FieldLabel>
+          <Textarea id="mailingStreet" rows={2} {...register('mailingStreet')} />
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="mailingCity">{t('mailingCity')}</FieldLabel>
+            <Input id="mailingCity" {...register('mailingCity')} />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="mailingStateProvince">{t('mailingStateProvince')}</FieldLabel>
+            <Input id="mailingStateProvince" {...register('mailingStateProvince')} />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="mailingZip">{t('mailingZip')}</FieldLabel>
+            <Input id="mailingZip" {...register('mailingZip')} />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="mailingCountry">{t('mailingCountry')}</FieldLabel>
+            <Input id="mailingCountry" {...register('mailingCountry')} />
+          </Field>
+        </div>
+
+        <h3 className="text-sm font-semibold tracking-wide">{t('sectionAdditional')}</h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="leadSource">{t('leadSource')}</FieldLabel>
+            <Select
+              value={watch('leadSource') || undefined}
+              onValueChange={(v) => setValue('leadSource', v as LeadSource)}
+            >
+              <SelectTrigger id="leadSource">
+                <SelectValue placeholder={t('leadSource')} />
+              </SelectTrigger>
+              <SelectContent>
+                {LEAD_SOURCES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {t(`leadSources.${s}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="department">{t('department')}</FieldLabel>
+            <Input id="department" {...register('department')} />
+          </Field>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Field>
             <FieldLabel htmlFor="tun">{t('currentUnit')}</FieldLabel>
             <Input
               id="tun"
-              placeholder="A-101"
               {...register('unitNumber')}
               className={errors.unitNumber ? 'border-destructive' : ''}
             />
@@ -564,6 +757,11 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
             />
           </Field>
         </div>
+        <h3 className="text-sm font-semibold tracking-wide">{t('sectionNotes')}</h3>
+        <Field>
+          <FieldLabel htmlFor="description">{t('description')}</FieldLabel>
+          <Textarea id="description" rows={4} {...register('description')} />
+        </Field>
 
         <Field>
           <FieldLabel htmlFor="tiban">{tParty('ibanOptional')}</FieldLabel>
@@ -578,6 +776,7 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
         </Field>
         {fileError ? <p className="text-sm text-destructive">{fileError}</p> : null}
       </FieldGroup>
+      </ScrollArea>
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="submit" disabled={isSubmitting}>

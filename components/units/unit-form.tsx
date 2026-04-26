@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { useForm, useWatch } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
 import {
   Select,
@@ -31,7 +33,7 @@ import {
   isStudioUnitType,
   shouldShowBedroomsField,
 } from '@/lib/unitTypeConfig'
-import { UNIT_TYPES, type Property, type UnitType } from '@/lib/types'
+import { UNIT_TYPES, type Property, type UnitType, type UnitUsage } from '@/lib/types'
 
 interface UnitFormProps {
   onSuccess?: () => void
@@ -40,6 +42,13 @@ interface UnitFormProps {
 
 type UnitFormData = {
   propertyId: string
+  unitCode?: string
+  isActive: boolean
+  nameEn?: string
+  nameAr?: string
+  descriptionEn?: string
+  descriptionAr?: string
+  usage: UnitUsage
   unitNumber: string
   type: z.infer<typeof unitTypeEnum>
   floor: number
@@ -66,6 +75,13 @@ function buildDefaultValues(partial: Partial<UnitFormData> | undefined): UnitFor
   const type = (partial?.type ?? 'apartment') as UnitType
   return {
     propertyId: partial?.propertyId ?? '',
+    unitCode: partial?.unitCode ?? '',
+    isActive: partial?.isActive ?? true,
+    nameEn: partial?.nameEn ?? '',
+    nameAr: partial?.nameAr ?? '',
+    descriptionEn: partial?.descriptionEn ?? '',
+    descriptionAr: partial?.descriptionAr ?? '',
+    usage: partial?.usage ?? 'for_rent',
     unitNumber: partial?.unitNumber ?? '',
     type,
     floor: partial?.floor ?? 0,
@@ -89,6 +105,13 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
       z
         .object({
           propertyId: z.string().min(1, t('selectPropertyError')),
+          unitCode: z.string().max(50).optional(),
+          isActive: z.boolean().default(true),
+          nameEn: z.string().max(120).optional(),
+          nameAr: z.string().max(120).optional(),
+          descriptionEn: z.string().max(500).optional(),
+          descriptionAr: z.string().max(500).optional(),
+          usage: z.enum(['for_rent', 'for_sale']).default('for_rent'),
           unitNumber: z.string().min(1, t('unitNumberRequired')),
           type: unitTypeEnum,
           floor: z.coerce.number().int().min(0, t('floorMin')),
@@ -210,6 +233,13 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
     try {
       const savePromise = createUnitRecord({
         propertyId: data.propertyId,
+        unitCode: data.unitCode,
+        isActive: data.isActive,
+        nameEn: data.nameEn,
+        nameAr: data.nameAr,
+        descriptionEn: data.descriptionEn,
+        descriptionAr: data.descriptionAr,
+        usage: data.usage,
         unitNumber: data.unitNumber,
         type: data.type,
         floor: data.floor,
@@ -252,6 +282,71 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <h3 className="text-sm font-semibold tracking-wide">{t('sectionUnitDetails')}</h3>
+      <FieldGroup>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="unitCode">{t('unitCode')}</FieldLabel>
+            <Input
+              id="unitCode"
+              placeholder={t('unitCodePlaceholder')}
+              {...register('unitCode')}
+              className={errors.unitCode ? 'border-destructive' : ''}
+            />
+          </Field>
+          <Field className="flex items-end">
+            <div className="flex items-center gap-2">
+              <Controller
+                control={control}
+                name="isActive"
+                render={({ field }) => (
+                  <Checkbox checked={field.value} onCheckedChange={(c) => field.onChange(Boolean(c))} />
+                )}
+              />
+              <FieldLabel htmlFor="isActive">{t('isActive')}</FieldLabel>
+            </div>
+          </Field>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="nameEn">{t('displayNameEn')}</FieldLabel>
+            <Input id="nameEn" {...register('nameEn')} />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="nameAr">{t('displayNameAr')}</FieldLabel>
+            <Input id="nameAr" dir="rtl" {...register('nameAr')} />
+          </Field>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="descriptionEn">{t('descriptionEn')}</FieldLabel>
+            <Textarea id="descriptionEn" rows={3} {...register('descriptionEn')} />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="descriptionAr">{t('descriptionAr')}</FieldLabel>
+            <Textarea id="descriptionAr" dir="rtl" rows={3} {...register('descriptionAr')} />
+          </Field>
+        </div>
+        <Field>
+          <FieldLabel htmlFor="status">{tCommon('status')}</FieldLabel>
+          <Select
+            value={watch('status')}
+            onValueChange={(value) => setValue('status', value as UnitFormData['status'])}
+          >
+            <SelectTrigger id="status">
+              <SelectValue placeholder={tCommon('status')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="vacant">{t('status.vacant')}</SelectItem>
+              <SelectItem value="reserved">{t('status.reserved')}</SelectItem>
+              <SelectItem value="occupied">{t('status.occupied')}</SelectItem>
+              <SelectItem value="maintenance">{t('status.maintenance')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+      </FieldGroup>
+
+      <h3 className="text-sm font-semibold tracking-wide">{t('sectionUnitInfo')}</h3>
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="propertyId">{t('linkedProperty')}</FieldLabel>
@@ -278,33 +373,6 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field>
-            <FieldLabel htmlFor="unitNumber">{t('unitNumber')}</FieldLabel>
-            <Input
-              id="unitNumber"
-              placeholder="A-101"
-              {...register('unitNumber')}
-              className={errors.unitNumber ? 'border-destructive' : ''}
-            />
-            {errors.unitNumber && (
-              <p className="text-sm text-destructive">{errors.unitNumber.message}</p>
-            )}
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="floor">{t('floor')}</FieldLabel>
-            <Input
-              id="floor"
-              type="number"
-              min={0}
-              step={1}
-              placeholder="0"
-              {...register('floor', { valueAsNumber: true })}
-              className={errors.floor ? 'border-destructive' : ''}
-            />
-            {errors.floor && <p className="text-sm text-destructive">{errors.floor.message}</p>}
-          </Field>
-
           <Field className="sm:col-span-2 lg:col-span-1">
             <FieldLabel htmlFor="type">{t('unitType')}</FieldLabel>
             <Select
@@ -313,7 +381,7 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
                 setValue('type', value as UnitFormData['type'], { shouldValidate: true })
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger id="type">
                 <SelectValue placeholder={t('unitType')} />
               </SelectTrigger>
               <SelectContent>
@@ -325,13 +393,63 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
               </SelectContent>
             </Select>
           </Field>
+          <Field>
+            <FieldLabel htmlFor="usage">{t('unitUsage')}</FieldLabel>
+            <Select
+              value={watch('usage')}
+              onValueChange={(value) => setValue('usage', value as UnitUsage)}
+            >
+              <SelectTrigger id="usage">
+                <SelectValue placeholder={t('unitUsage')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="for_rent">{t('usage.for_rent')}</SelectItem>
+                <SelectItem value="for_sale">{t('usage.for_sale')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="floor">{t('floor')}</FieldLabel>
+            <Input
+              id="floor"
+              type="number"
+              min={0}
+              step={1}
+              {...register('floor', { valueAsNumber: true })}
+              className={errors.floor ? 'border-destructive' : ''}
+            />
+            {errors.floor && <p className="text-sm text-destructive">{errors.floor.message}</p>}
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="unitNumber">{t('unitNumber')}</FieldLabel>
+            <Input
+              id="unitNumber"
+              {...register('unitNumber')}
+              className={errors.unitNumber ? 'border-destructive' : ''}
+            />
+            {errors.unitNumber && (
+              <p className="text-sm text-destructive">{errors.unitNumber.message}</p>
+            )}
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="areaSquareMeters">{t('area')}</FieldLabel>
+            <Input
+              id="areaSquareMeters"
+              type="number"
+              min={1}
+              {...register('areaSquareMeters', { valueAsNumber: true })}
+              className={errors.areaSquareMeters ? 'border-destructive' : ''}
+            />
+            {errors.areaSquareMeters && (
+              <p className="text-sm text-destructive">{errors.areaSquareMeters.message}</p>
+            )}
+          </Field>
         </div>
+      </FieldGroup>
 
-        <div
-          className={
-            showBedrooms ? 'grid gap-4 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-1 sm:max-w-xs'
-          }
-        >
+      <h3 className="text-sm font-semibold tracking-wide">{t('sectionPhysical')}</h3>
+      <FieldGroup>
+        <div className={showBedrooms ? 'grid gap-4 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-1 sm:max-w-xs'}>
           {showBedrooms && (
             <Field>
               <FieldLabel htmlFor="bedrooms">{t('bedrooms')}</FieldLabel>
@@ -363,56 +481,19 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
             )}
           </Field>
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="areaSquareMeters">{t('area')}</FieldLabel>
-            <Input
-              id="areaSquareMeters"
-              type="number"
-              min={1}
-              placeholder="120"
-              {...register('areaSquareMeters', { valueAsNumber: true })}
-              className={errors.areaSquareMeters ? 'border-destructive' : ''}
-            />
-            {errors.areaSquareMeters && (
-              <p className="text-sm text-destructive">{errors.areaSquareMeters.message}</p>
-            )}
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="monthlyRent">{t('monthlyRent')} (OMR)</FieldLabel>
-            <Input
-              id="monthlyRent"
-              type="number"
-              min={0}
-              step="0.001"
-              placeholder="450.000"
-              {...register('monthlyRent', { valueAsNumber: true })}
-              className={errors.monthlyRent ? 'border-destructive' : ''}
-            />
-            {errors.monthlyRent && (
-              <p className="text-sm text-destructive">{errors.monthlyRent.message}</p>
-            )}
-          </Field>
-        </div>
-
         <Field>
-          <FieldLabel htmlFor="status">{tCommon('status')}</FieldLabel>
-          <Select
-            value={watch('status')}
-            onValueChange={(value) => setValue('status', value as UnitFormData['status'])}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={tCommon('status')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="vacant">{t('status.vacant')}</SelectItem>
-              <SelectItem value="occupied">{t('status.occupied')}</SelectItem>
-              <SelectItem value="maintenance">{t('status.maintenance')}</SelectItem>
-              <SelectItem value="reserved">{t('status.reserved')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <FieldLabel htmlFor="monthlyRent">{t('monthlyRent')}</FieldLabel>
+          <Input
+            id="monthlyRent"
+            type="number"
+            min={0}
+            step="0.001"
+            {...register('monthlyRent', { valueAsNumber: true })}
+            className={errors.monthlyRent ? 'border-destructive' : ''}
+          />
+          {errors.monthlyRent && (
+            <p className="text-sm text-destructive">{errors.monthlyRent.message}</p>
+          )}
         </Field>
       </FieldGroup>
 

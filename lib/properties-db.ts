@@ -3,9 +3,12 @@ import { db } from '@/lib/firebase'
 import {
   OMAN_GOVERNORATES,
   PROPERTY_TYPES,
+  type PropertyContractType,
+  type PropertyStatus,
   type OmanGovernorate,
   type Property,
   type PropertyType,
+  type PropertyUsage,
 } from '@/lib/types'
 
 const COLLECTION = 'properties'
@@ -56,6 +59,21 @@ export function mapPropertyDoc(id: string, data: Record<string, unknown>): Prope
     occupiedUnits: occupied > totalUnits ? totalUnits : occupied,
     managerId: data.managerId ? String(data.managerId) : undefined,
     associationId: data.associationId ? String(data.associationId) : undefined,
+    status: (['new', 'under_construction', 'complete'].includes(String(data.status ?? ''))
+      ? data.status
+      : 'new') as PropertyStatus,
+    usage: (['residential', 'commercial', 'mixed'].includes(String(data.usage ?? ''))
+      ? (data.usage as PropertyUsage)
+      : undefined),
+    contractType: (['for_rent', 'for_sale', 'for_rent_and_sale'].includes(String(data.contractType ?? ''))
+      ? (data.contractType as PropertyContractType)
+      : undefined),
+    completionPercent: data.completionPercent != null ? Number(data.completionPercent) : undefined,
+    startDate: data.startDate instanceof Timestamp ? data.startDate.toDate() : undefined,
+    handoverDate: data.handoverDate instanceof Timestamp ? data.handoverDate.toDate() : undefined,
+    landAreaSqm: data.landAreaSqm != null ? Number(data.landAreaSqm) : undefined,
+    builtUpAreaSqm: data.builtUpAreaSqm != null ? Number(data.builtUpAreaSqm) : undefined,
+    nationalAddress: data.nationalAddress != null ? String(data.nationalAddress) : undefined,
     images: stringArray(data.images),
     amenities: stringArray(data.amenities),
     createdAt: toDate(data.createdAt),
@@ -93,22 +111,7 @@ export function subscribeProperties(
   )
 }
 
-export type CreatePropertyInput = {
-  /** Optional business / internal reference */
-  code?: string
-  plotNumber?: string
-  nameEn: string
-  nameAr: string
-  type: PropertyType
-  governorate: OmanGovernorate
-  city: string
-  addressEn: string
-  addressAr: string
-  totalUnits: number
-  amenities: string[]
-  /** Set to the signed-in user so Firestore rules can scope reads (e.g. managerId == uid). */
-  managerId?: string
-}
+export type CreatePropertyInput = Omit<Property, 'id' | 'occupiedUnits' | 'createdAt' | 'updatedAt'>
 
 export async function createPropertyRecord(input: CreatePropertyInput): Promise<string> {
   if (!db) throw new Error('Firestore not initialized')
@@ -116,7 +119,7 @@ export async function createPropertyRecord(input: CreatePropertyInput): Promise<
   const total = Number(input.totalUnits)
   const totalUnits = Math.max(1, Number.isFinite(total) ? Math.floor(total) : 1)
   const codeTrim = input.code?.trim()
-  const ref = await addDoc(collection(db, COLLECTION), {
+  const payload: Record<string, unknown> = {
     ...(codeTrim ? { code: codeTrim } : {}),
     ...(plot ? { plotNumber: plot } : {}),
     nameEn: input.nameEn.trim(),
@@ -133,6 +136,16 @@ export async function createPropertyRecord(input: CreatePropertyInput): Promise<
     amenities: input.amenities,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  })
+  }
+  if (input.status) payload.status = input.status
+  if (input.usage) payload.usage = input.usage
+  if (input.contractType) payload.contractType = input.contractType
+  if (input.completionPercent != null) payload.completionPercent = input.completionPercent
+  if (input.startDate) payload.startDate = Timestamp.fromDate(input.startDate)
+  if (input.handoverDate) payload.handoverDate = Timestamp.fromDate(input.handoverDate)
+  if (input.landAreaSqm != null) payload.landAreaSqm = input.landAreaSqm
+  if (input.builtUpAreaSqm != null) payload.builtUpAreaSqm = input.builtUpAreaSqm
+  if (input.nationalAddress) payload.nationalAddress = input.nationalAddress.trim()
+  const ref = await addDoc(collection(db, COLLECTION), payload)
   return ref.id
 }

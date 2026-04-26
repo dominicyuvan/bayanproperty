@@ -29,6 +29,18 @@ export const PROPERTY_TYPES = [
 
 export type PropertyType = typeof PROPERTY_TYPES[number]
 
+// Property Status
+export const PROPERTY_STATUSES = ['new', 'under_construction', 'complete'] as const
+export type PropertyStatus = typeof PROPERTY_STATUSES[number]
+
+// Property Usage
+export const PROPERTY_USAGES = ['residential', 'commercial', 'mixed'] as const
+export type PropertyUsage = typeof PROPERTY_USAGES[number]
+
+// Property Contract Type
+export const PROPERTY_CONTRACT_TYPES = ['for_rent', 'for_sale', 'for_rent_and_sale'] as const
+export type PropertyContractType = typeof PROPERTY_CONTRACT_TYPES[number]
+
 // Unit Types
 export const UNIT_TYPES = [
   'apartment',
@@ -42,8 +54,28 @@ export const UNIT_TYPES = [
 
 export type UnitType = typeof UNIT_TYPES[number]
 
+// Unit Usage
+export const UNIT_USAGES = ['for_rent', 'for_sale'] as const
+export type UnitUsage = typeof UNIT_USAGES[number]
+
 // Unit Status
 export type UnitStatus = 'vacant' | 'occupied' | 'maintenance' | 'reserved'
+
+// Contact Salutation
+export const CONTACT_SALUTATIONS = ['mr', 'mrs', 'ms', 'dr', 'prof', 'eng'] as const
+export type ContactSalutation = typeof CONTACT_SALUTATIONS[number]
+
+// Contact Lead Source
+export const LEAD_SOURCES = ['referral', 'website', 'direct', 'agent', 'social_media', 'other'] as const
+export type LeadSource = typeof LEAD_SOURCES[number]
+
+// Lease Contract Status
+export const LEASE_CONTRACT_STATUSES = ['draft', 'active', 'expired', 'terminated'] as const
+export type LeaseContractStatus = typeof LEASE_CONTRACT_STATUSES[number]
+
+// Lease Payment Method
+export const LEASE_PAYMENT_METHODS = ['bank_transfer', 'cash', 'cheque', 'pdc'] as const
+export type LeasePaymentMethod = typeof LEASE_PAYMENT_METHODS[number]
 
 // Payment Status
 export type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'partial'
@@ -121,10 +153,15 @@ export type IndividualIdTypeOman = 'national_id' | 'residency' | 'passport'
 export interface TenantRecord {
   id: string
   partyType: PartyType
+  salutation?: ContactSalutation
+  firstName?: string
+  lastName?: string
   nameEn: string
   nameAr: string
   email: string
   phone: string
+  mobile?: string
+  title?: string
   /** Display label for occupied unit (e.g. A-101) */
   unitNumber: string
   leaseStatus: TenantLeaseStatus
@@ -146,6 +183,15 @@ export interface TenantRecord {
   crCertificateFileName?: string
   crCertificateStoragePath?: string
   iban?: string
+  mailingStreet?: string
+  mailingCity?: string
+  mailingStateProvince?: string
+  mailingZip?: string
+  mailingCountry?: string
+  birthdate?: Date
+  leadSource?: LeadSource
+  department?: string
+  description?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -189,6 +235,15 @@ export interface Property {
   nameEn: string
   nameAr: string
   type: PropertyType
+  status: PropertyStatus
+  usage?: PropertyUsage
+  contractType?: PropertyContractType
+  completionPercent?: number
+  startDate?: Date
+  handoverDate?: Date
+  landAreaSqm?: number
+  builtUpAreaSqm?: number
+  nationalAddress?: string
   governorate: OmanGovernorate
   city: string
   addressEn: string
@@ -208,6 +263,13 @@ export interface Property {
 export interface Unit {
   id: string
   propertyId: string
+  unitCode?: string
+  isActive: boolean
+  nameEn?: string
+  nameAr?: string
+  descriptionEn?: string
+  descriptionAr?: string
+  usage: UnitUsage
   unitNumber: string
   type: UnitType
   floor: number
@@ -335,6 +397,29 @@ export interface NotificationPreferences {
     maintenance: { email: boolean; sms: boolean }
     association: { email: boolean; sms: boolean }
   }
+}
+
+// Lease Contract
+export interface LeaseContract {
+  id: string
+  contractNumber: string
+  tenantId: string
+  propertyId: string
+  unitId: string
+  status: LeaseContractStatus
+  paymentMethod?: LeasePaymentMethod
+  contractType: 'rental'
+  contractStartDate: Date
+  contractEndDate?: Date
+  contractTermMonths?: number
+  specialTerms?: string
+  description?: string
+  customerSignedBy?: string
+  customerSignedDate?: Date
+  companySignedBy?: string
+  companySignedDate?: Date
+  createdAt: Date
+  updatedAt: Date
 }
 
 // Helper function to format OMR currency

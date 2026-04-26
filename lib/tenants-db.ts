@@ -12,7 +12,14 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { assertPartyIdOrCrForType } from '@/lib/party-db-rules'
-import type { IndividualIdTypeOman, PartyType, TenantLeaseStatus, TenantRecord } from '@/lib/types'
+import type {
+  ContactSalutation,
+  IndividualIdTypeOman,
+  LeadSource,
+  PartyType,
+  TenantLeaseStatus,
+  TenantRecord,
+} from '@/lib/types'
 
 const COLLECTION = 'tenants'
 
@@ -29,6 +36,20 @@ function parsePartyType(value: unknown): PartyType {
 function parseIdType(value: unknown): IndividualIdTypeOman | undefined {
   const s = String(value ?? '')
   if (s === 'national_id' || s === 'residency' || s === 'passport') return s
+  return undefined
+}
+
+function parseSalutation(value: unknown): ContactSalutation | undefined {
+  const s = String(value ?? '')
+  if (['mr', 'mrs', 'ms', 'dr', 'prof', 'eng'].includes(s)) return s as ContactSalutation
+  return undefined
+}
+
+function parseLeadSource(value: unknown): LeadSource | undefined {
+  const s = String(value ?? '')
+  if (['referral', 'website', 'direct', 'agent', 'social_media', 'other'].includes(s)) {
+    return s as LeadSource
+  }
   return undefined
 }
 
@@ -60,6 +81,21 @@ export function mapTenantDoc(id: string, data: Record<string, unknown>): TenantR
     crCertificateFileName: data.crCertificateFileName != null ? String(data.crCertificateFileName) : undefined,
     crCertificateStoragePath: data.crCertificateStoragePath != null ? String(data.crCertificateStoragePath) : undefined,
     iban: data.iban != null ? String(data.iban) : undefined,
+    salutation: parseSalutation(data.salutation),
+    firstName: data.firstName != null ? String(data.firstName) : undefined,
+    lastName: data.lastName != null ? String(data.lastName) : undefined,
+    mobile: data.mobile != null ? String(data.mobile) : undefined,
+    title: data.title != null ? String(data.title) : undefined,
+    mailingStreet: data.mailingStreet != null ? String(data.mailingStreet) : undefined,
+    mailingCity: data.mailingCity != null ? String(data.mailingCity) : undefined,
+    mailingStateProvince:
+      data.mailingStateProvince != null ? String(data.mailingStateProvince) : undefined,
+    mailingZip: data.mailingZip != null ? String(data.mailingZip) : undefined,
+    mailingCountry: data.mailingCountry != null ? String(data.mailingCountry) : undefined,
+    birthdate: data.birthdate instanceof Timestamp ? data.birthdate.toDate() : undefined,
+    leadSource: parseLeadSource(data.leadSource),
+    department: data.department != null ? String(data.department) : undefined,
+    description: data.description != null ? String(data.description) : undefined,
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   }
@@ -115,6 +151,20 @@ function tenantWritePayload(input: CreateTenantInput): Record<string, unknown> {
   if (input.crCertificateFileName != null) payload.crCertificateFileName = input.crCertificateFileName
   if (input.crCertificateStoragePath != null) payload.crCertificateStoragePath = input.crCertificateStoragePath
   if (input.iban != null && input.iban.trim() !== '') payload.iban = input.iban.trim()
+  if (input.salutation) payload.salutation = input.salutation
+  if (input.firstName?.trim()) payload.firstName = input.firstName.trim()
+  if (input.lastName?.trim()) payload.lastName = input.lastName.trim()
+  if (input.mobile?.trim()) payload.mobile = input.mobile.trim()
+  if (input.title?.trim()) payload.title = input.title.trim()
+  if (input.mailingStreet?.trim()) payload.mailingStreet = input.mailingStreet.trim()
+  if (input.mailingCity?.trim()) payload.mailingCity = input.mailingCity.trim()
+  if (input.mailingStateProvince?.trim()) payload.mailingStateProvince = input.mailingStateProvince.trim()
+  if (input.mailingZip?.trim()) payload.mailingZip = input.mailingZip.trim()
+  if (input.mailingCountry?.trim()) payload.mailingCountry = input.mailingCountry.trim()
+  if (input.birthdate) payload.birthdate = Timestamp.fromDate(input.birthdate)
+  if (input.leadSource) payload.leadSource = input.leadSource
+  if (input.department?.trim()) payload.department = input.department.trim()
+  if (input.description?.trim()) payload.description = input.description.trim()
   return payload
 }
 
@@ -159,11 +209,25 @@ export async function patchTenantRecord(
     'crCertificateFileName',
     'crCertificateStoragePath',
     'iban',
+    'salutation',
+    'firstName',
+    'lastName',
+    'mobile',
+    'title',
+    'mailingStreet',
+    'mailingCity',
+    'mailingStateProvince',
+    'mailingZip',
+    'mailingCountry',
+    'birthdate',
+    'leadSource',
+    'department',
+    'description',
   ]
   for (const k of keys) {
     if (!(k in patch)) continue
     const v = patch[k]
-    if (k === 'idExpiryDate' || k === 'crExpiryDate') {
+    if (k === 'idExpiryDate' || k === 'crExpiryDate' || k === 'birthdate') {
       const d = v as Date | undefined
       if (d) partial[k] = Timestamp.fromDate(d)
       else partial[k] = null
