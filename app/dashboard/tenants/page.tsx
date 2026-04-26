@@ -29,11 +29,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { TenantForm } from '@/components/tenants/tenant-form'
 import { RosterDocumentsPanel } from '@/components/roster/roster-documents-panel'
 import { ExpiryStatusDot } from '@/components/party/expiry-status-dot'
 import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
-import { subscribeTenantRecords } from '@/lib/tenants-db'
+import { deleteTenantRecord, subscribeTenantRecords } from '@/lib/tenants-db'
 import { getExpiryUrgency } from '@/lib/expiry-urgency'
 import { getPrimaryExpiryForParty } from '@/lib/party-display'
 import type { TenantLeaseStatus, TenantRecord } from '@/lib/types'
@@ -52,6 +62,8 @@ export default function TenantsPage() {
   const [tenants, setTenants] = useState<TenantRecord[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [editTenantId, setEditTenantId] = useState<string | null>(null)
+  const [deleteTenantId, setDeleteTenantId] = useState<string | null>(null)
   const [tenantFormKey, setTenantFormKey] = useState(0)
   const [documentsTenantId, setDocumentsTenantId] = useState<string | null>(null)
   const listErrorShown = useRef(false)
@@ -97,6 +109,21 @@ export default function TenantsPage() {
       row.partyType.toLowerCase().includes(q)
     )
   })
+  const editTenant = editTenantId ? tenants.find((tnt) => tnt.id === editTenantId) ?? null : null
+  const deleteTenant = deleteTenantId ? tenants.find((tnt) => tnt.id === deleteTenantId) ?? null : null
+  const toDateInput = (value?: Date) => (value ? value.toISOString().slice(0, 10) : '')
+
+  const handleDelete = async () => {
+    if (!deleteTenantId) return
+    try {
+      await deleteTenantRecord(deleteTenantId)
+      toast.success(tCommon('delete'))
+      setDeleteTenantId(null)
+    } catch (error) {
+      console.error(error)
+      toast.error(tErrors('somethingWentWrong'))
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -141,6 +168,65 @@ export default function TenantsPage() {
           ) : null}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={editTenantId !== null} onOpenChange={(open) => !open && setEditTenantId(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{tCommon('edit')}</DialogTitle>
+          </DialogHeader>
+          {editTenant ? (
+            <TenantForm
+              tenantId={editTenant.id}
+              onSuccess={() => setEditTenantId(null)}
+              initialData={{
+                partyType: editTenant.partyType,
+                salutation: editTenant.salutation,
+                firstName: editTenant.firstName ?? '',
+                lastName: editTenant.lastName ?? '',
+                nameEn: editTenant.nameEn,
+                nameAr: editTenant.nameAr,
+                nationality: editTenant.nationality ?? 'OM',
+                individualIdType: editTenant.individualIdType ?? 'national_id',
+                idNumber: editTenant.idNumber ?? '',
+                idExpiryDate: toDateInput(editTenant.idExpiryDate),
+                email: editTenant.email,
+                phone: editTenant.phone,
+                mobile: editTenant.mobile ?? '',
+                title: editTenant.title ?? '',
+                contactPersonName: editTenant.contactPersonName ?? '',
+                contactPersonPhone: editTenant.contactPersonPhone ?? '',
+                crNumber: editTenant.crNumber ?? '',
+                crExpiryDate: toDateInput(editTenant.crExpiryDate),
+                mailingStreet: editTenant.mailingStreet ?? '',
+                mailingCity: editTenant.mailingCity ?? '',
+                mailingStateProvince: editTenant.mailingStateProvince ?? '',
+                mailingZip: editTenant.mailingZip ?? '',
+                mailingCountry: editTenant.mailingCountry ?? 'Oman',
+                birthdate: toDateInput(editTenant.birthdate),
+                leadSource: editTenant.leadSource,
+                department: editTenant.department ?? '',
+                unitNumber: editTenant.unitNumber,
+                leaseStatus: editTenant.leaseStatus,
+                description: editTenant.description ?? '',
+                iban: editTenant.iban ?? '',
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteTenantId !== null} onOpenChange={(open) => !open && setDeleteTenantId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tCommon('confirmDelete')}</AlertDialogTitle>
+            <AlertDialogDescription>{deleteTenant?.nameEn ?? ''}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>{tCommon('delete')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="relative max-w-md">
         <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -232,11 +318,11 @@ export default function TenantsPage() {
                           <Eye className="me-2 h-4 w-4" />
                           {tCommon('view')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditTenantId(row.id)}>
                           <Pencil className="me-2 h-4 w-4" />
                           {tCommon('edit')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteTenantId(row.id)}>
                           <Trash2 className="me-2 h-4 w-4" />
                           {tCommon('delete')}
                         </DropdownMenuItem>

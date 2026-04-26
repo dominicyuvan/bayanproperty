@@ -1,4 +1,14 @@
-import { addDoc, collection, onSnapshot, serverTimestamp, Timestamp } from 'firebase/firestore'
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  updateDoc,
+  type DocumentData,
+} from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { UNIT_TYPES, type Unit, type UnitStatus, type UnitType, type UnitUsage } from '@/lib/types'
 
@@ -129,4 +139,53 @@ export async function createUnitRecord(input: CreateUnitInput): Promise<string> 
   payload.usage = input.usage ?? 'for_rent'
   const ref = await addDoc(collection(db, COLLECTION), payload)
   return ref.id
+}
+
+export async function updateUnitRecord(
+  id: string,
+  patch: Partial<Omit<Unit, 'id' | 'createdAt' | 'updatedAt'>>,
+): Promise<void> {
+  if (!db) throw new Error('Firestore not initialized')
+  const partial: Record<string, unknown> = { updatedAt: serverTimestamp() }
+  const keys: (keyof Omit<Unit, 'id' | 'createdAt' | 'updatedAt'>)[] = [
+    'propertyId',
+    'unitCode',
+    'isActive',
+    'nameEn',
+    'nameAr',
+    'descriptionEn',
+    'descriptionAr',
+    'usage',
+    'unitNumber',
+    'type',
+    'floor',
+    'bedrooms',
+    'bathrooms',
+    'areaSquareMeters',
+    'monthlyRent',
+    'status',
+    'tenantId',
+    'ownerId',
+    'leaseStartDate',
+    'leaseEndDate',
+    'images',
+    'features',
+  ]
+  for (const k of keys) {
+    if (!(k in patch)) continue
+    const v = patch[k]
+    if (k === 'leaseStartDate' || k === 'leaseEndDate') {
+      const d = v as Date | undefined
+      partial[k] = d ? Timestamp.fromDate(d) : null
+      continue
+    }
+    if (v === undefined) continue
+    partial[k] = v
+  }
+  await updateDoc(doc(db, COLLECTION, id), partial as DocumentData)
+}
+
+export async function deleteUnitRecord(id: string): Promise<void> {
+  if (!db) throw new Error('Firestore not initialized')
+  await deleteDoc(doc(db, COLLECTION, id))
 }

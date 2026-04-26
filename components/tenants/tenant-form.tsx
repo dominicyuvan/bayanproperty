@@ -76,6 +76,8 @@ type TenantFormData = {
 
 interface TenantFormProps {
   onSuccess?: () => void
+  tenantId?: string
+  initialData?: Partial<TenantFormData>
 }
 
 function normalizeOmanPhone(phone: string): string {
@@ -99,7 +101,7 @@ const ibanLoose = (s: string) => {
   return /^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,32}$/i.test(x)
 }
 
-export function TenantForm({ onSuccess }: TenantFormProps) {
+export function TenantForm({ onSuccess, tenantId, initialData }: TenantFormProps) {
   const t = useTranslations('tenants')
   const tParty = useTranslations('party')
   const tCommon = useTranslations('common')
@@ -260,6 +262,7 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
       leaseStatus: 'pending',
       description: '',
       iban: '',
+      ...initialData,
     },
   })
 
@@ -389,7 +392,10 @@ export function TenantForm({ onSuccess }: TenantFormProps) {
     }
 
     try {
-      const id = await createTenantRecord(base)
+      const id = tenantId ?? (await createTenantRecord(base))
+      if (tenantId) {
+        await patchTenantRecord(tenantId, base)
+      }
       if (data.partyType === 'individual' && idFile) {
         const cat = individualIdTypeToUploadCategory(data.individualIdType)
         const { downloadUrl, storagePath, originalFileName } = await uploadRosterPartyKyc5mb(

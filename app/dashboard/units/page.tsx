@@ -35,10 +35,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { UnitForm } from '@/components/units/unit-form'
 import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
 import { subscribeProperties } from '@/lib/properties-db'
-import { subscribeUnits } from '@/lib/units-db'
+import { deleteUnitRecord, subscribeUnits } from '@/lib/units-db'
 import { formatOMR, type Property, type Unit, type UnitStatus } from '@/lib/types'
 import { toast } from 'sonner'
 
@@ -59,6 +69,8 @@ export default function UnitsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [editUnitId, setEditUnitId] = useState<string | null>(null)
+  const [deleteUnitId, setDeleteUnitId] = useState<string | null>(null)
   const [unitFormKey, setUnitFormKey] = useState(0)
   const [units, setUnits] = useState<Unit[]>([])
   const [properties, setProperties] = useState<Property[]>([])
@@ -116,6 +128,20 @@ export default function UnitsPage() {
     const matchesType = typeFilter === 'all' || unit.type === typeFilter
     return matchesSearch && matchesStatus && matchesType
   })
+  const editUnit = editUnitId ? units.find((u) => u.id === editUnitId) ?? null : null
+  const deleteUnit = deleteUnitId ? units.find((u) => u.id === deleteUnitId) ?? null : null
+
+  const handleDelete = async () => {
+    if (!deleteUnitId) return
+    try {
+      await deleteUnitRecord(deleteUnitId)
+      toast.success(tCommon('delete'))
+      setDeleteUnitId(null)
+    } catch (error) {
+      console.error(error)
+      toast.error(tErrors('somethingWentWrong'))
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -190,6 +216,51 @@ export default function UnitsPage() {
           </SelectContent>
         </Select>
       </div>
+
+      <Dialog open={editUnitId !== null} onOpenChange={(open) => !open && setEditUnitId(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{tCommon('edit')}</DialogTitle>
+          </DialogHeader>
+          {editUnit ? (
+            <UnitForm
+              unitId={editUnit.id}
+              onSuccess={() => setEditUnitId(null)}
+              initialData={{
+                propertyId: editUnit.propertyId,
+                unitCode: editUnit.unitCode ?? '',
+                isActive: editUnit.isActive,
+                nameEn: editUnit.nameEn ?? '',
+                nameAr: editUnit.nameAr ?? '',
+                descriptionEn: editUnit.descriptionEn ?? '',
+                descriptionAr: editUnit.descriptionAr ?? '',
+                usage: editUnit.usage,
+                unitNumber: editUnit.unitNumber,
+                type: editUnit.type,
+                floor: editUnit.floor,
+                bedrooms: editUnit.bedrooms,
+                bathrooms: editUnit.bathrooms,
+                areaSquareMeters: editUnit.areaSquareMeters,
+                monthlyRent: editUnit.monthlyRent,
+                status: editUnit.status,
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteUnitId !== null} onOpenChange={(open) => !open && setDeleteUnitId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tCommon('confirmDelete')}</AlertDialogTitle>
+            <AlertDialogDescription>{deleteUnit?.unitNumber ?? ''}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>{tCommon('delete')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Units Table */}
       <div className="overflow-hidden rounded-lg border bg-card">
@@ -276,11 +347,11 @@ export default function UnitsPage() {
                           <Eye className="me-2 h-4 w-4" />
                           {tCommon('view')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditUnitId(unit.id)}>
                           <Pencil className="me-2 h-4 w-4" />
                           {tCommon('edit')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUnitId(unit.id)}>
                           <Trash2 className="me-2 h-4 w-4" />
                           {tCommon('delete')}
                         </DropdownMenuItem>

@@ -36,9 +36,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { PropertyForm } from '@/components/properties/property-form'
 import { useOpenAddDialogFromQuery } from '@/hooks/use-open-add-dialog-from-query'
-import { subscribeProperties } from '@/lib/properties-db'
+import { deletePropertyRecord, subscribeProperties } from '@/lib/properties-db'
 import { MUSCAT_DISTRICT_SET } from '@/lib/muscat-districts'
 import { OMAN_GOVERNORATES, type Property } from '@/lib/types'
 
@@ -56,6 +66,8 @@ export default function PropertiesPage() {
   const [governorateFilter, setGovernorateFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [editPropertyId, setEditPropertyId] = useState<string | null>(null)
+  const [deletePropertyId, setDeletePropertyId] = useState<string | null>(null)
   const [propertyFormKey, setPropertyFormKey] = useState(0)
   const listErrorShown = useRef(false)
 
@@ -98,6 +110,21 @@ export default function PropertiesPage() {
     const matchesType = typeFilter === 'all' || property.type === typeFilter
     return matchesSearch && matchesGovernorate && matchesType
   })
+  const editProperty = editPropertyId ? properties.find((p) => p.id === editPropertyId) ?? null : null
+  const deleteProperty = deletePropertyId ? properties.find((p) => p.id === deletePropertyId) ?? null : null
+  const toDateInput = (value?: Date) => (value ? value.toISOString().slice(0, 10) : '')
+
+  const handleDelete = async () => {
+    if (!deletePropertyId) return
+    try {
+      await deletePropertyRecord(deletePropertyId)
+      toast.success(tCommon('delete'))
+      setDeletePropertyId(null)
+    } catch (error) {
+      console.error(error)
+      toast.error(tErrors('somethingWentWrong'))
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -172,6 +199,52 @@ export default function PropertiesPage() {
           </SelectContent>
         </Select>
       </div>
+
+      <Dialog open={editPropertyId !== null} onOpenChange={(open) => !open && setEditPropertyId(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{tCommon('edit')}</DialogTitle>
+          </DialogHeader>
+          {editProperty ? (
+            <PropertyForm
+              propertyId={editProperty.id}
+              onSuccess={() => setEditPropertyId(null)}
+              initialData={{
+                plotNumber: editProperty.plotNumber ?? '',
+                nameEn: editProperty.nameEn,
+                nameAr: editProperty.nameAr,
+                status: editProperty.status,
+                type: editProperty.type,
+                usage: editProperty.usage,
+                contractType: editProperty.contractType,
+                completionPercent: editProperty.completionPercent,
+                startDate: toDateInput(editProperty.startDate),
+                handoverDate: toDateInput(editProperty.handoverDate),
+                landAreaSqm: editProperty.landAreaSqm,
+                builtUpAreaSqm: editProperty.builtUpAreaSqm,
+                governorate: editProperty.governorate,
+                city: editProperty.city,
+                nationalAddress: editProperty.nationalAddress ?? '',
+                totalUnits: editProperty.totalUnits,
+                amenities: editProperty.amenities.join(', '),
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deletePropertyId !== null} onOpenChange={(open) => !open && setDeletePropertyId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tCommon('confirmDelete')}</AlertDialogTitle>
+            <AlertDialogDescription>{deleteProperty?.nameEn ?? ''}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>{tCommon('delete')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
@@ -254,11 +327,14 @@ export default function PropertiesPage() {
                           <Eye className="me-2 h-4 w-4" />
                           {tCommon('view')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditPropertyId(property.id)}>
                           <Pencil className="me-2 h-4 w-4" />
                           {tCommon('edit')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => setDeletePropertyId(property.id)}
+                        >
                           <Trash2 className="me-2 h-4 w-4" />
                           {tCommon('delete')}
                         </DropdownMenuItem>

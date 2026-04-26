@@ -20,7 +20,7 @@ import {
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/auth-context'
 import { db, isFirebaseConfigured } from '@/lib/firebase'
-import { createPropertyRecord } from '@/lib/properties-db'
+import { createPropertyRecord, updatePropertyRecord } from '@/lib/properties-db'
 import { MUSCAT_DISTRICT_KEYS, MUSCAT_DISTRICT_SET } from '@/lib/muscat-districts'
 import {
   OMAN_GOVERNORATES,
@@ -56,10 +56,11 @@ type PropertyFormData = {
 
 interface PropertyFormProps {
   onSuccess?: () => void
+  propertyId?: string
   initialData?: Partial<PropertyFormData>
 }
 
-export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
+export function PropertyForm({ onSuccess, propertyId, initialData }: PropertyFormProps) {
   const t = useTranslations('properties')
   const tCommon = useTranslations('common')
   const tGov = useTranslations('governorates')
@@ -166,7 +167,7 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
           .map((s) => s.trim())
           .filter(Boolean) ?? []
       const plot = data.plotNumber?.trim()
-      const savePromise = createPropertyRecord({
+      const payload = {
         ...(plot ? { plotNumber: plot } : {}),
         nameEn: name,
         nameAr: data.nameAr?.trim() || name,
@@ -188,7 +189,10 @@ export function PropertyForm({ onSuccess, initialData }: PropertyFormProps) {
         images: [],
         amenities,
         managerId: user.id,
-      })
+      }
+      const savePromise = propertyId
+        ? updatePropertyRecord(propertyId, payload)
+        : createPropertyRecord(payload)
       let saveTimeoutId: ReturnType<typeof setTimeout> | undefined
       const timeoutPromise = new Promise<never>((_, reject) => {
         saveTimeoutId = setTimeout(() => {

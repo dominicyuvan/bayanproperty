@@ -21,7 +21,7 @@ import {
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/auth-context'
 import { db, isFirebaseConfigured } from '@/lib/firebase'
-import { createUnitRecord } from '@/lib/units-db'
+import { createUnitRecord, updateUnitRecord } from '@/lib/units-db'
 import { subscribeProperties } from '@/lib/properties-db'
 import {
   getBathroomsInputMin,
@@ -37,6 +37,7 @@ import { UNIT_TYPES, type Property, type UnitType, type UnitUsage } from '@/lib/
 
 interface UnitFormProps {
   onSuccess?: () => void
+  unitId?: string
   initialData?: Partial<UnitFormData>
 }
 
@@ -93,7 +94,7 @@ function buildDefaultValues(partial: Partial<UnitFormData> | undefined): UnitFor
   }
 }
 
-export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
+export function UnitForm({ onSuccess, unitId, initialData }: UnitFormProps) {
   const t = useTranslations('units')
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
@@ -231,7 +232,7 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
 
     const SAVE_TIMEOUT_MS = 45_000
     try {
-      const savePromise = createUnitRecord({
+      const payload = {
         propertyId: data.propertyId,
         unitCode: data.unitCode,
         isActive: data.isActive,
@@ -248,7 +249,8 @@ export function UnitForm({ onSuccess, initialData }: UnitFormProps) {
         areaSquareMeters: data.areaSquareMeters,
         monthlyRent: data.monthlyRent,
         status: data.status,
-      })
+      }
+      const savePromise = unitId ? updateUnitRecord(unitId, payload) : createUnitRecord(payload)
       let saveTimeoutId: ReturnType<typeof setTimeout> | undefined
       const timeoutPromise = new Promise<never>((_, reject) => {
         saveTimeoutId = setTimeout(() => {

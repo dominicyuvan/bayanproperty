@@ -1,4 +1,14 @@
-import { addDoc, collection, onSnapshot, serverTimestamp, Timestamp } from 'firebase/firestore'
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  updateDoc,
+  type DocumentData,
+} from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import {
   OMAN_GOVERNORATES,
@@ -148,4 +158,55 @@ export async function createPropertyRecord(input: CreatePropertyInput): Promise<
   if (input.nationalAddress) payload.nationalAddress = input.nationalAddress.trim()
   const ref = await addDoc(collection(db, COLLECTION), payload)
   return ref.id
+}
+
+export async function updatePropertyRecord(
+  id: string,
+  patch: Partial<Omit<Property, 'id' | 'createdAt' | 'updatedAt'>>,
+): Promise<void> {
+  if (!db) throw new Error('Firestore not initialized')
+  const partial: Record<string, unknown> = { updatedAt: serverTimestamp() }
+  const keys: (keyof Omit<Property, 'id' | 'createdAt' | 'updatedAt'>)[] = [
+    'code',
+    'plotNumber',
+    'nameEn',
+    'nameAr',
+    'type',
+    'status',
+    'usage',
+    'contractType',
+    'completionPercent',
+    'startDate',
+    'handoverDate',
+    'landAreaSqm',
+    'builtUpAreaSqm',
+    'nationalAddress',
+    'governorate',
+    'city',
+    'addressEn',
+    'addressAr',
+    'totalUnits',
+    'occupiedUnits',
+    'managerId',
+    'associationId',
+    'images',
+    'amenities',
+  ]
+  for (const k of keys) {
+    if (!(k in patch)) continue
+    const v = patch[k]
+    if (k === 'startDate' || k === 'handoverDate') {
+      const d = v as Date | undefined
+      partial[k] = d ? Timestamp.fromDate(d) : null
+      continue
+    }
+    if (v === undefined) continue
+    partial[k] = v
+  }
+  await updateDoc(doc(db, COLLECTION, id), partial as DocumentData)
+}
+
+export async function deletePropertyRecord(id: string): Promise<void> {
+  if (!db) throw new Error('Firestore not initialized')
+  await deleteDoc(doc(db, COLLECTION, id))
 }

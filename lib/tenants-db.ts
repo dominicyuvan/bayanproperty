@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   orderBy,
@@ -238,4 +239,9 @@ export async function patchTenantRecord(
   }
   partial.updatedAt = serverTimestamp()
   await updateDoc(doc(db, COLLECTION, id), partial as DocumentData)
+}
+
+export async function deleteTenantRecord(id: string): Promise<void> {
+  if (!db) throw new Error('Firestore not initialized')
+  await deleteDoc(doc(db, COLLECTION, id))
 }
